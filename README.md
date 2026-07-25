@@ -311,6 +311,8 @@ Limitaciones conocidas (navegador):
 Para continuar desarrollo/soporte de esta fase, revisar:
 
 - `CONTINUIDAD_WEB_GITHUB_PAGES_2026-07-25.md`
+- `CONTRATO_API_WEB_ONEDRIVE.md`
+- `api-openapi-web-onedrive.yaml`
 
 ## Autor
 

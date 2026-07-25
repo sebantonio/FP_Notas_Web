@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: Gestor Notas FP Web API
+  version: 0.1.0
+  description: API base para operar Excel en OneDrive desde la app web.
+servers:
+  - url: https://api.example.com/api
+paths:
+  /auth/status:
+    get:
+      summary: Estado de autenticacion
+      responses:
+        '200':
+          description: Estado de sesion
+  /auth/login:
+    get:
+      summary: Iniciar login Microsoft
+      responses:
+        '302':
+          description: Redireccion a proveedor de identidad
+  /auth/logout:
+    post:
+      summary: Cerrar sesion
+      responses:
+        '200':
+          description: Sesion cerrada
+  /excel/file/current:
+    get:
+      summary: Archivo Excel activo en sesion
+      responses:
+        '200':
+          description: Archivo actual
+  /excel/file/select:
+    post:
+      summary: Seleccionar archivo OneDrive para la sesion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driveId, itemId]
+              properties:
+                driveId:
+                  type: string
+                itemId:
+                  type: string
+                name:
+                  type: string
+                webUrl:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Archivo fijado
+  /excel/alumnos:
+    get:
+      summary: Obtener alumnos
+      responses:
+        '200':
+          description: Lista de alumnos
+    put:
+      summary: Guardar alumnos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [alumnos]
+              properties:
+                alumnos:
+                  type: array
+                  items:
+                    type: object
+                expectedVersion:
+                  type: string
+      responses:
+        '200':
+          description: Guardado correcto
+        '409':
+          description: Conflicto de version
+  /excel/unidades:
+    get:
+      summary: Obtener unidades
+      responses:
+        '200':
+          description: Lista de unidades
+    put:
+      summary: Guardar unidades
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [unidades]
+              properties:
+                unidades:
+                  type: array
+                  items:
+                    type: object
+                expectedVersion:
+                  type: string
+      responses:
+        '200':
+          description: Guardado correcto
+        '409':
+          description: Conflicto de version
+  /excel/rraa-criterios:
+    get:
+      summary: Obtener RRAA, criterios y ponderaciones
+      responses:
+        '200':
+          description: Datos de RRAA/CE
+    put:
+      summary: Guardar RRAA, criterios y ponderaciones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: object
+                expectedVersion:
+                  type: string
+      responses:
+        '200':
+          description: Guardado correcto
+        '409':
+          description: Conflicto de version
+  /excel/notas-actividad/get:
+    post:
+      summary: Obtener notas de actividad
+      responses:
+        '200':
+          description: Datos de actividad
+  /excel/notas-actividad/save:
+    post:
+      summary: Guardar notas de actividad
+      responses:
+        '200':
+          description: Guardado correcto
+  /excel/notas-unidad:
+    post:
+      summary: Obtener notas por unidad
+      responses:
+        '200':
+          description: Datos de unidad
+  /excel/notas-evaluacion:
+    post:
+      summary: Obtener notas de evaluacion
+      responses:
+        '200':
+          description: Datos de evaluacion
+  /excel/notas-empresa:
+    get:
+      summary: Obtener notas empresa
+      responses:
+        '200':
+          description: Datos empresa
+    put:
+      summary: Guardar notas empresa
+      responses:
+        '200':
+          description: Guardado correcto
+  /excel/nota-final:
+    get:
+      summary: Obtener nota final combinada
+      responses:
+        '200':
+          description: Nota final
+  /app/version:
+    get:
+      summary: Version de API/app
+      responses:
+        '200':
+          description: Version

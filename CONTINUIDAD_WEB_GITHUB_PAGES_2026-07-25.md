@@ -176,3 +176,8 @@ Si en algun momento la portada no refleja cambios recientes:
 - Probar con querystring (`?v=timestamp`) para evitar cache.
 - Revisar ultimo run de `Deploy Pages` en Actions.
 - Confirmar que el cambio esta en `main` y que el workflow publico `_site` correctamente.
+
+## 12) Artefactos nuevos para backend web
+
+- `CONTRATO_API_WEB_ONEDRIVE.md`: contrato funcional completo para implementar backend + Graph.
+- `api-openapi-web-onedrive.yaml`: especificacion OpenAPI base para arrancar implementacion.
