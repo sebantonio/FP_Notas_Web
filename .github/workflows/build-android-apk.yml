@@ -10,6 +10,7 @@ jobs:
   android-apk:
     runs-on: ubuntu-latest
     env:
+      CI: 'true'
       JAVA_VERSION: '17'
       RUST_BACKTRACE: '1'
     steps:
@@ -19,7 +20,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Setup Java
@@ -30,6 +31,13 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Add Rust Android targets
+        run: |
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -44,11 +52,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Init Android project
-        run: npm run android:init
-
       - name: Build APK
-        run: npm run android:build:apk
+        run: npm run android:build:apk -- --verbose
 
       - name: Locate APKs
         id: locate_apk

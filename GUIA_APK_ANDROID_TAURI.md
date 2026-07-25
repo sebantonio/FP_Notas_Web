@@ -54,6 +54,11 @@ En `package.json`:
 4. Entrar al run y descargar artefacto `gestor-notas-fp-android-apk`.
 5. Instalar APK en la tablet.
 
+Si un run falla en un paso de inicializacion Android:
+
+- relanzar el workflow tras actualizar a la version mas reciente del archivo `.github/workflows/build-android-apk.yml`
+- revisar el paso `Build APK` (es el diagnostico principal)
+
 Ventaja:
 
 - No necesitas instalar Android Studio/SDK/NDK en tu equipo.
@@ -139,6 +144,7 @@ Revisar:
 2. Variables `ANDROID_HOME`/`ANDROID_SDK_ROOT` incorrectas
 3. JDK incompatible
 4. Licencias de SDK sin aceptar
+5. Error puntual de inicializacion Android en CI (normalmente se corrige en siguiente run con workflow actualizado)
 
 Comando util (si aplica):
 
