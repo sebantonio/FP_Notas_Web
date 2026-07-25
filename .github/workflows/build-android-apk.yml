@@ -1,0 +1,71 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    env:
+      JAVA_VERSION: '17'
+      RUST_BACKTRACE: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install Android build dependencies
+        run: |
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;27.0.12077973"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Init Android project
+        run: npm run android:init
+
+      - name: Build APK
+        run: npm run android:build:apk
+
+      - name: Locate APKs
+        id: locate_apk
+        run: |
+          set -e
+          mkdir -p artifacts
+          find src-tauri -type f \( -name "*.apk" -o -name "*.aab" \) -print | tee artifacts/found-artifacts.txt
+          APK_COUNT=$(find src-tauri -type f -name "*.apk" | wc -l)
+          if [ "$APK_COUNT" -eq 0 ]; then
+            echo "No APK generated" >&2
+            exit 1
+          fi
+          find src-tauri -type f -name "*.apk" -exec cp {} artifacts/ \;
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gestor-notas-fp-android-apk
+          path: artifacts/
+          if-no-files-found: error

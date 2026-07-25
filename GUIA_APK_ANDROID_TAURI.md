@@ -29,6 +29,11 @@ Variables recomendadas:
 - `ANDROID_HOME` o `ANDROID_SDK_ROOT`
 - `JAVA_HOME`
 
+Alternativa sin instalar SDK local:
+
+- Compilar APK en GitHub Actions con el workflow `Build Android APK`
+- Descargar el artefacto generado desde la pestana `Actions`
+
 ## 3. Scripts ya preparados
 
 En `package.json`:
@@ -40,6 +45,20 @@ En `package.json`:
 - `npm run android:open`
 
 ## 4. Flujo de trabajo recomendado
+
+## 4A. Flujo recomendado SIN SDK local (GitHub Actions)
+
+1. Ir a GitHub -> `Actions` -> workflow `Build Android APK`.
+2. Pulsar `Run workflow`.
+3. Esperar a que termine en verde.
+4. Entrar al run y descargar artefacto `gestor-notas-fp-android-apk`.
+5. Instalar APK en la tablet.
+
+Ventaja:
+
+- No necesitas instalar Android Studio/SDK/NDK en tu equipo.
+
+## 4B. Flujo local (si en futuro dispones de SDK)
 
 ### Paso A: inicializar entorno Android de Tauri
 
@@ -101,7 +120,7 @@ Nota:
 
 - Ruta web Pages: operativa (se mantiene por compatibilidad)
 - Ruta APK Android: preparada a nivel de scripts y documentacion
-- Siguiente hito: ejecutar build Android en entorno con SDK/NDK y validar en tablet real
+- Siguiente hito: ejecutar build Android en GitHub Actions y validar APK en tablet real
 
 ## 9. Checklist de primera compilacion
 

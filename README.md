@@ -328,6 +328,10 @@ Guia operativa:
 
 - `GUIA_APK_ANDROID_TAURI.md`
 
+Compilacion en la nube (sin SDK local):
+
+- Workflow GitHub Actions: `.github/workflows/build-android-apk.yml`
+
 ## Autor
 
 Sebantonio
