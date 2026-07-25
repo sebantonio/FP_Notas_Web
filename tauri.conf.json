@@ -1,0 +1,48 @@
+{
+  "productName": "Gestor Notas FP",
+  "version": "0.1.0",
+  "identifier": "com.gestornotasfp.app",
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "devPath": "../",
+    "frontendDist": "../",
+    "withGlobalTauri": false
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Gestor Notas FP",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "maximized": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "msi",
+      "nsis"
+    ],
+    "deb": {
+      "depends": []
+    },
+    "nsis": {
+      "headerBitmap": "",
+      "installerIcon": "",
+      "uninstallerIcon": "",
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  },
+  "android": {
+    "minSdkVersion": 24,
+    "targetSdkVersion": 34
+  }
+}
