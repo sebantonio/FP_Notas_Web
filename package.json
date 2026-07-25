@@ -4,6 +4,11 @@
   "description": "Aplicacion local para gestionar alumnos en una plantilla Excel sincronizada con OneDrive.",
   "scripts": {
     "tauri": "tauri",
+    "android:init": "tauri android init",
+    "android:dev": "tauri android dev",
+    "android:build": "tauri android build",
+    "android:build:apk": "tauri android build --apk",
+    "android:open": "tauri android open",
     "tauri:dev": "tauri dev",
     "tauri:debug": "tauri build --debug",
     "tauri:build": "node scripts/tauri-build-versioned.js",

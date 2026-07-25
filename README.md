@@ -314,6 +314,20 @@ Para continuar desarrollo/soporte de esta fase, revisar:
 - `CONTRATO_API_WEB_ONEDRIVE.md`
 - `api-openapi-web-onedrive.yaml`
 
+## Cambio de estrategia: APK Android local
+
+Por restricciones de seguridad/autenticacion del entorno corporativo, la via web con Excel remoto puede no ser viable operativamente.
+
+Se define como estrategia principal:
+
+- App Android nativa (APK) con Tauri
+- Trabajo directo sobre archivo Excel local en tablet
+- Sin dependencia de backend cloud para uso diario
+
+Guia operativa:
+
+- `GUIA_APK_ANDROID_TAURI.md`
+
 ## Autor
 
 Sebantonio
