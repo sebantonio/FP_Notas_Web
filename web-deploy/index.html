@@ -954,11 +954,13 @@
                 <div class="file-actions">
                     <button class="small-button" type="button" id="changeFileBtn">Cambiar archivo</button>
                     <a
+                        id="oneDriveLink"
                         class="online-link"
                         href="https://crfpcastilla-my.sharepoint.com/:x:/g/personal/sslm07_educastillalamancha_es/IQCcqkwxp64ZQ7zaAT65YnDDAUq1WmRzaTsFUgF8vd8QcSw?e=MDXWht"
                         target="_blank"
                         rel="noopener noreferrer"
                     >OneDrive ↗</a>
+                    <button class="small-button" type="button" id="oneDriveConfigBtn" title="Configurar enlace de OneDrive">Config. OneDrive</button>
                 </div>
 
                 <div>
@@ -1098,7 +1100,45 @@
         const RECENT_KEY = "recentExcelFiles";
         const LAST_VISIT_KEY = "lastQuickAccess";
         const FILE_TS_KEY = "fileActiveTs";
+        const ONEDRIVE_URL_KEY = "oneDrivePickerUrl";
+        const DEFAULT_ONEDRIVE_URL = "https://crfpcastilla-my.sharepoint.com/:x:/g/personal/sslm07_educastillalamancha_es/IQCcqkwxp64ZQ7zaAT65YnDDAUq1WmRzaTsFUgF8vd8QcSw?e=MDXWht";
         const MAX_RECENT = 6;
+
+        function normalizarOneDriveUrl(value) {
+            const url = String(value || "").trim();
+            if (!url) return "";
+            if (!/^https?:\/\//i.test(url)) return "";
+            return url;
+        }
+
+        function getOneDriveUrl() {
+            const saved = localStorage.getItem(ONEDRIVE_URL_KEY);
+            return normalizarOneDriveUrl(saved) || DEFAULT_ONEDRIVE_URL;
+        }
+
+        function applyOneDriveUrl() {
+            const link = document.getElementById("oneDriveLink");
+            if (!link) return;
+            link.href = getOneDriveUrl();
+        }
+
+        function configurarOneDriveUrl() {
+            const actual = getOneDriveUrl();
+            const propuesta = prompt("Pega la URL de OneDrive (carpeta o archivo):", actual);
+            if (propuesta === null) return;
+
+            const normalizada = normalizarOneDriveUrl(propuesta);
+            if (!normalizada) {
+                alert("URL no válida. Debe empezar por http:// o https://");
+                return;
+            }
+
+            localStorage.setItem(ONEDRIVE_URL_KEY, normalizada);
+            applyOneDriveUrl();
+            if (window.appUx && typeof window.appUx.showStatus === "function") {
+                window.appUx.showStatus("Enlace de OneDrive actualizado", "success", 3000);
+            }
+        }
 
         function formatError(error) {
             return error && error.message ? error.message : String(error);
@@ -1359,6 +1399,12 @@
             await updateVersionBadge();
             initContinueBanner();
             refreshActiveSince();
+            applyOneDriveUrl();
+
+            const oneDriveConfigBtn = document.getElementById("oneDriveConfigBtn");
+            if (oneDriveConfigBtn) {
+                oneDriveConfigBtn.addEventListener("click", configurarOneDriveUrl);
+            }
 
             if (!window.electronExcel) {
                 const activeName = document.getElementById("activeFileName");
