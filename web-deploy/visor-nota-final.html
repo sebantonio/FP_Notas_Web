@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nota Final: Instituto + Empresa</title>
+    <script src="app-bridge.js"></script>
+    <link rel="stylesheet" href="ux-common.css">
+    <script src="ux-common.js" defer></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            padding: 20px;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
+            background: #f3f6fb;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 42px rgba(31,41,55,0.16);
+            overflow: hidden;
+        }
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .nav-group { display: flex; gap: 10px; }
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #374151;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .nav-button:hover { border-color: #6366f1; background: #f5f3ff; }
+
+        .section-title {
+            padding: 18px 20px 8px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1e1b4b;
+            border-bottom: 2px solid #e0e7ff;
+        }
+        .section-subtitle { font-size: 0.82rem; font-weight: 500; color: #6b7280; margin-left: 8px; }
+
+        .table-wrap { overflow-x: auto; padding: 0 0 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+        thead th {
+            background: #6366f1;
+            color: #fff;
+            font-weight: 800;
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 2px solid #4f46e5;
+            white-space: nowrap;
+        }
+        thead th.th-nota { text-align: center; min-width: 110px; }
+        thead th.th-final {
+            background: #4338ca;
+            border-bottom-color: #3730a3;
+        }
+        thead th.th-ra { text-align: center; width: 60px; }
+        tbody tr.data-row:nth-child(4n+1) { background: #fafafa; }
+        tbody tr.data-row:nth-child(4n+3) { background: #fafafa; }
+        tbody tr.data-row:hover { background: #eef2ff; }
+        tbody td { padding: 8px 16px; border-bottom: 1px solid #f0f0f0; }
+        tbody td.td-nota { text-align: center; }
+        tbody td.td-ra  { text-align: center; padding: 6px 8px; }
+
+        .grade {
+            display: inline-block; padding: 3px 12px; border-radius: 6px;
+            font-weight: 700; font-size: 0.9rem; min-width: 48px; text-align: center;
+        }
+        .grade.ok    { background: #dcfce7; color: #166534; }
+        .grade.warn  { background: #fef3c7; color: #92400e; }
+        .grade.bad   { background: #fee2e2; color: #991b1b; }
+        .grade.empty { background: #f3f4f6; color: #9ca3af; }
+        .grade.final-ok   { background: #dbeafe; color: #1e40af; font-size: 0.95rem; padding: 4px 14px; }
+        .grade.final-warn { background: #fef3c7; color: #92400e; font-size: 0.95rem; padding: 4px 14px; }
+        .grade.final-bad  { background: #fee2e2; color: #991b1b; font-size: 0.95rem; padding: 4px 14px; }
+        .grade.final-empty{ background: #f3f4f6; color: #9ca3af; font-size: 0.95rem; padding: 4px 14px; }
+
+        /* RA toggle button */
+        .btn-ra {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 3px 9px; border-radius: 5px;
+            background: #ede9fe; color: #5b21b6;
+            border: 1px solid #c4b5fd;
+            font: inherit; font-size: 0.78rem; font-weight: 700;
+            cursor: pointer; transition: background 0.12s, transform 0.12s;
+            white-space: nowrap;
+        }
+        .btn-ra:hover { background: #ddd6fe; }
+        .btn-ra.open  { background: #7c3aed; color: #fff; border-color: #6d28d9; }
+        .btn-ra .arrow { transition: transform 0.15s; display: inline-block; }
+        .btn-ra.open .arrow { transform: rotate(180deg); }
+
+        /* RA detail row */
+        tr.ra-detail { display: none; }
+        tr.ra-detail.visible { display: table-row; }
+        tr.ra-detail td {
+            padding: 0;
+            border-bottom: 2px solid #e0e7ff;
+            background: #fafaff;
+        }
+        .ra-panel {
+            padding: 10px 16px 14px;
+        }
+        .ra-panel-title {
+            font-size: 0.75rem; font-weight: 700; color: #6366f1;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            margin-bottom: 8px;
+        }
+        .ra-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .ra-card {
+            display: flex; flex-direction: column;
+            background: #fff;
+            border: 1px solid #e0e7ff;
+            border-radius: 7px;
+            padding: 6px 10px;
+            min-width: 90px;
+            gap: 4px;
+        }
+        .ra-card-label {
+            font-size: 0.73rem; font-weight: 800;
+            color: #4338ca; text-align: center;
+            border-bottom: 1px solid #e0e7ff;
+            padding-bottom: 3px; margin-bottom: 2px;
+        }
+        .ra-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 6px; font-size: 0.76rem;
+        }
+        .ra-row-label {
+            color: #6b7280; font-weight: 600; min-width: 28px;
+        }
+        .grade-sm {
+            display: inline-block; padding: 1px 7px; border-radius: 4px;
+            font-weight: 700; font-size: 0.76rem; min-width: 36px; text-align: center;
+        }
+        .grade-sm.ok    { background: #dcfce7; color: #166534; }
+        .grade-sm.warn  { background: #fef3c7; color: #92400e; }
+        .grade-sm.bad   { background: #fee2e2; color: #991b1b; }
+        .grade-sm.empty { background: #f3f4f6; color: #9ca3af; }
+
+        .loading { padding: 40px; text-align: center; color: #6366f1; font-weight: 700; }
+        .error   { padding: 20px; color: #991b1b; font-weight: 600; }
+
+        .filter-bar {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) minmax(170px, 220px) minmax(200px, 250px) auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 14px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f8f9ff;
+        }
+        .filter-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #4b5563;
+        }
+        .filter-field input,
+        .filter-field select {
+            width: 100%;
+            min-height: 36px;
+            padding: 7px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font: inherit;
+            background: #fff;
+        }
+        .result-count {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #4b5563;
+            white-space: nowrap;
+        }
+
+        .legend {
+            display: flex;
+            gap: 16px;
+            padding: 10px 20px 14px;
+            font-size: 0.8rem;
+            color: #6b7280;
+            flex-wrap: wrap;
+        }
+        .legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.ok   { background: #16a34a; }
+        .dot.warn { background: #b45309; }
+        .dot.bad  { background: #dc2626; }
+
+        @media (max-width: 760px) {
+            .filter-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="ux-app-shell ux-page-visor-nota-final">
+<div class="container ux-shell">
+    <nav class="page-nav ux-page-nav">
+        <div class="nav-group ux-nav-group">
+            <button class="nav-button ux-button" onclick="history.back()">← Atrás</button>
+            <a class="nav-button ux-button" href="index.html">⌂ Inicio</a>
+        </div>
+        <div class="nav-group ux-nav-group">
+            <button class="nav-button ux-button" onclick="cargar()">↺ Recargar</button>
+        </div>
+    </nav>
+
+    <header class="ux-page-header">
+        <h1>Nota Final: Instituto + Empresa</h1>
+        <p id="fileLabel"></p>
+    </header>
+    <main class="ux-content">
+        <section class="filter-bar" aria-label="Filtros de alumnos">
+            <div class="filter-field">
+                <label for="notaFinalSearchInput">Buscar alumno</label>
+                <input id="notaFinalSearchInput" type="search" placeholder="Nombre del alumno" autocomplete="off">
+            </div>
+            <div class="filter-field">
+                <label for="notaFinalFilter">Filtro</label>
+                <select id="notaFinalFilter">
+                    <option value="all">Todos</option>
+                    <option value="pass">Aprobados</option>
+                    <option value="risk">En riesgo (3-4,9)</option>
+                    <option value="fail">Suspensos (&lt;3)</option>
+                    <option value="missing">Sin final</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="notaFinalSort">Orden</label>
+                <select id="notaFinalSort">
+                    <option value="name-asc">Nombre (A-Z)</option>
+                    <option value="name-desc">Nombre (Z-A)</option>
+                    <option value="final-desc">Nota final (mayor-menor)</option>
+                    <option value="final-asc">Nota final (menor-mayor)</option>
+                    <option value="risk-first">Riesgo primero</option>
+                </select>
+            </div>
+            <div class="result-count" id="notaFinalResultCount">0 alumnos</div>
+        </section>
+        <div id="content"><div class="loading">Cargando...</div></div>
+    </main>
+</div>
+
+<script>
+    const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    let alumnosCache = [];
+    let searchQuery = "";
+    let finalFilter = "all";
+    let sortMode = "name-asc";
+    let currentFileName = "";
+
+    function normalizedText(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function finalValue(value) {
+        return typeof value === 'number' && value > 0 ? value : -1;
+    }
+
+    function getVisibleAlumnos() {
+        const filtered = alumnosCache.filter((a) => {
+            const nameMatch = !searchQuery || normalizedText(a.nombre).includes(searchQuery);
+            if (!nameMatch) return false;
+
+            const hasFinal = typeof a.notaFinal === 'number' && a.notaFinal > 0;
+            if (finalFilter === 'missing') return !hasFinal;
+            if (finalFilter === 'pass') return hasFinal && a.notaFinal >= 5;
+            if (finalFilter === 'risk') return hasFinal && a.notaFinal >= 3 && a.notaFinal < 5;
+            if (finalFilter === 'fail') return hasFinal && a.notaFinal < 3;
+            return true;
+        });
+
+        const sorted = filtered.slice();
+        sorted.sort((a, b) => {
+            const nameA = normalizedText(a.nombre);
+            const nameB = normalizedText(b.nombre);
+            const finalA = finalValue(a.notaFinal);
+            const finalB = finalValue(b.notaFinal);
+
+            if (sortMode === 'name-desc') return nameB.localeCompare(nameA, 'es');
+            if (sortMode === 'final-desc') {
+                if (finalB !== finalA) return finalB - finalA;
+                return nameA.localeCompare(nameB, 'es');
+            }
+            if (sortMode === 'final-asc') {
+                if (finalA !== finalB) return finalA - finalB;
+                return nameA.localeCompare(nameB, 'es');
+            }
+            if (sortMode === 'risk-first') {
+                const score = (v) => {
+                    if (v < 0) return 4;
+                    if (v < 3) return 1;
+                    if (v < 5) return 0;
+                    return 2;
+                };
+                const diff = score(finalA) - score(finalB);
+                if (diff !== 0) return diff;
+                return nameA.localeCompare(nameB, 'es');
+            }
+            return nameA.localeCompare(nameB, 'es');
+        });
+        return sorted;
+    }
+
+    function rerenderFromCache() {
+        render({ alumnos: alumnosCache, fileName: currentFileName });
+    }
+
+    function gradeClass(n) {
+        if (typeof n !== 'number' || n === 0) return 'empty';
+        if (n >= 5) return 'ok';
+        if (n >= 3) return 'warn';
+        return 'bad';
+    }
+
+    function finalClass(n) {
+        if (typeof n !== 'number' || n === 0) return 'final-empty';
+        if (n >= 5) return 'final-ok';
+        if (n >= 3) return 'final-warn';
+        return 'final-bad';
+    }
+
+    function fmt(n) {
+        if (typeof n !== 'number' || n === 0) return '—';
+        return n.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+    }
+
+    function toggleRa(idx) {
+        const detailRow = document.getElementById('ra-detail-' + idx);
+        const btn = document.getElementById('ra-btn-' + idx);
+        if (!detailRow) return;
+        const open = detailRow.classList.toggle('visible');
+        btn.classList.toggle('open', open);
+    }
+
+    function buildRaPanel(raGrades) {
+        if (!raGrades || raGrades.length === 0) return '<p style="font-size:0.8rem;color:#9ca3af">Sin datos de RA</p>';
+        const cards = raGrades.map(ra => {
+            const ic = gradeClass(ra.inst);
+            const ec = gradeClass(ra.emp);
+            return `
+            <div class="ra-card">
+                <div class="ra-card-label">${esc(ra.label)}</div>
+                <div class="ra-row">
+                    <span class="ra-row-label">Inst</span>
+                    <span class="grade-sm ${ic}">${fmt(ra.inst)}</span>
+                </div>
+                <div class="ra-row">
+                    <span class="ra-row-label">Emp</span>
+                    <span class="grade-sm ${ec}">${fmt(ra.emp)}</span>
+                </div>
+            </div>`;
+        }).join('');
+        return `<div class="ra-grid">${cards}</div>`;
+    }
+
+    function render(data) {
+        alumnosCache = data.alumnos || [];
+        currentFileName = data.fileName || "";
+        document.getElementById('fileLabel').textContent = data.fileName ? `— ${data.fileName}` : '';
+
+        const alumnos = getVisibleAlumnos();
+        document.getElementById('notaFinalResultCount').textContent = `${alumnos.length} de ${alumnosCache.length} alumnos`;
+
+        if (!alumnosCache.length) {
+            document.getElementById('content').innerHTML = '<div class="loading">No se encontraron alumnos en la hoja FINAL.</div>';
+            return;
+        }
+
+        if (!alumnos.length) {
+            document.getElementById('content').innerHTML = '<div class="loading">No hay resultados para el filtro actual.</div>';
+            return;
+        }
+
+        const hasRa = alumnos.some(a => a.raGrades && a.raGrades.length > 0);
+        const colCount = hasRa ? 5 : 4;
+
+        const rows = alumnos.map((a, idx) => {
+            const raBtn = hasRa
+                ? `<td class="td-ra"><button class="btn-ra" id="ra-btn-${idx}" onclick="toggleRa(${idx})"><span class="arrow">▼</span> RA</button></td>`
+                : '';
+            const raDetailRow = hasRa ? `
+            <tr class="ra-detail" id="ra-detail-${idx}">
+                <td colspan="${colCount}">
+                    <div class="ra-panel">
+                        <div class="ra-panel-title">Notas por Resultado de Aprendizaje</div>
+                        ${buildRaPanel(a.raGrades)}
+                    </div>
+                </td>
+            </tr>` : '';
+
+            return `
+            <tr class="data-row">
+                <td>${esc(a.nombre)}</td>
+                <td class="td-nota"><span class="grade ${gradeClass(a.notaInstituto)} ux-grade">${fmt(a.notaInstituto)}</span></td>
+                <td class="td-nota"><span class="grade ${gradeClass(a.notaEmpresa)} ux-grade">${fmt(a.notaEmpresa)}</span></td>
+                <td class="td-nota"><span class="grade ${finalClass(a.notaFinal)} ux-grade">${fmt(a.notaFinal)}</span></td>
+                ${raBtn}
+            </tr>${raDetailRow}`;
+        }).join('');
+
+        const raHeader = hasRa ? '<th class="th-ra">RA</th>' : '';
+
+        document.getElementById('content').innerHTML = `
+            <div class="table-wrap ux-table-wrap">
+                <table class="ux-table">
+                    <thead>
+                        <tr>
+                            <th>Alumno/a</th>
+                            <th class="th-nota">Nota Instituto</th>
+                            <th class="th-nota">Nota Empresa</th>
+                            <th class="th-nota th-final">Nota Final</th>
+                            ${raHeader}
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+            <div class="legend">
+                <span><span class="dot ok"></span> Aprobado (≥ 5)</span>
+                <span><span class="dot warn"></span> En riesgo (3-4,9)</span>
+                <span><span class="dot bad"></span> Suspenso (&lt; 3)</span>
+            </div>
+        `;
+    }
+
+    async function cargar() {
+        document.getElementById('content').innerHTML = '<div class="loading">Cargando...</div>';
+        try {
+            const data = await window.electronExcel.getNotaFinal();
+            if (!data) throw new Error('Sin datos');
+            render(data);
+        } catch (e) {
+            document.getElementById('content').innerHTML = `<div class="error">Error: ${esc(String(e))}</div>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.electronExcel || !window.electronExcel.isAvailable) {
+            document.getElementById('content').innerHTML = '<div class="error">Solo disponible en la aplicación de escritorio.</div>';
+            return;
+        }
+
+        const searchInput = document.getElementById('notaFinalSearchInput');
+        const filterSelect = document.getElementById('notaFinalFilter');
+        const sortSelect = document.getElementById('notaFinalSort');
+
+        searchInput.addEventListener('input', (event) => {
+            searchQuery = String(event.target.value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+            rerenderFromCache();
+        });
+
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                if (searchInput.value) {
+                    searchInput.value = '';
+                    searchQuery = '';
+                    rerenderFromCache();
+                }
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                rerenderFromCache();
+            }
+        });
+
+        filterSelect.addEventListener('change', (event) => {
+            finalFilter = event.target.value || 'all';
+            rerenderFromCache();
+        });
+
+        sortSelect.addEventListener('change', (event) => {
+            sortMode = event.target.value || 'name-asc';
+            rerenderFromCache();
+        });
+
+        [filterSelect, sortSelect].forEach((select) => {
+            select.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    rerenderFromCache();
+                }
+            });
+        });
+
+        cargar();
+    });
+</script>
+</body>
+</html>

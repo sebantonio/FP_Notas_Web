@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Empresa</title>
+    <script src="app-bridge.js"></script>
+    <link rel="stylesheet" href="ux-common.css">
+    <script src="ux-common.js" defer></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            padding: 20px;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
+            background: #f3f6fb;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 42px rgba(31,41,55,0.16);
+            overflow: hidden;
+        }
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .nav-group { display: flex; gap: 10px; }
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #374151;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .nav-button:hover { border-color: #6366f1; background: #f5f3ff; }
+
+        .section-title {
+            padding: 18px 20px 8px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1e1b4b;
+            border-bottom: 2px solid #e0e7ff;
+        }
+        .section-subtitle { font-size: 0.82rem; font-weight: 500; color: #6b7280; margin-left: 8px; }
+
+        .table-wrap { overflow-x: auto; padding: 0 0 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+        thead th {
+            background: #6366f1;
+            color: #fff;
+            font-weight: 800;
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 2px solid #4f46e5;
+            white-space: nowrap;
+        }
+        thead th.th-nota { text-align: center; min-width: 100px; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody tr:hover { background: #eef2ff; }
+        tbody tr.not-dual { color: #6b7280; background: #f8fafc; }
+        tbody tr.not-dual:hover { background: #f1f5f9; }
+        tbody td { padding: 8px 16px; border-bottom: 1px solid #f0f0f0; }
+        tbody td.td-nota { text-align: center; }
+        tbody td.td-dual { text-align: center; width: 110px; }
+
+        .grade { display: inline-block; padding: 3px 12px; border-radius: 6px; font-weight: 700; font-size: 0.9rem; min-width: 48px; text-align: center; }
+        .grade.ok    { background: #dcfce7; color: #166534; }
+        .grade.warn  { background: #fef3c7; color: #92400e; }
+        .grade.bad   { background: #fee2e2; color: #991b1b; }
+        .grade.empty { background: #f3f4f6; color: #9ca3af; }
+
+        .dual-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 62px;
+            padding: 4px 9px;
+            border: 1px solid #bbf7d0;
+            border-radius: 999px;
+            color: #166534;
+            background: #dcfce7;
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+        .dual-pill.no {
+            color: #6b7280;
+            border-color: #e5e7eb;
+            background: #f3f4f6;
+        }
+
+        .btn-expand {
+            background: none; border: 1px solid #c7d2fe; border-radius: 5px;
+            color: #6366f1; font-size: 0.78rem; font-weight: 800; padding: 2px 7px;
+            cursor: pointer; margin-left: 6px; white-space: nowrap;
+        }
+        .btn-expand:hover { background: #eef2ff; }
+        .btn-expand.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+        .ra-panel { display: none; }
+        .ra-panel.open { display: table-row; }
+        .ra-panel-inner { padding: 10px 16px 10px 32px; background: #f8faff; border-top: 1px solid #e0e7ff; }
+
+        .ra-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+        .ra-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 6px;
+            background: #eef2ff; border: 1px solid #c7d2fe;
+            font-size: 0.82rem; font-weight: 700; color: #3730a3;
+            cursor: pointer;
+        }
+        .ra-chip:hover { background: #e0e7ff; }
+        .ra-chip.selected { background: #6366f1; color: #fff; border-color: #4f46e5; }
+
+        .ce-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .ce-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 8px; border-radius: 5px;
+            background: #f0fdf4; border: 1px solid #bbf7d0;
+            font-size: 0.8rem; font-weight: 700; color: #166534;
+        }
+        .ce-chip.bad   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .ce-chip.warn  { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+        .ce-chip.empty { background: #f3f4f6; border-color: #e5e7eb; color: #9ca3af; }
+
+        td.td-expand { text-align: center; width: 110px; }
+        .loading { padding: 40px; text-align: center; color: #6366f1; font-weight: 700; }
+        .error   { padding: 20px; color: #991b1b; font-weight: 600; }
+
+        .filter-bar {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) minmax(170px, 220px) minmax(180px, 240px) auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 14px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f8f9ff;
+        }
+        .filter-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #4b5563;
+        }
+        .filter-field input,
+        .filter-field select {
+            width: 100%;
+            min-height: 36px;
+            padding: 7px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font: inherit;
+            background: #fff;
+        }
+        .result-count {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #4b5563;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 760px) {
+            .filter-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="ux-app-shell ux-page-visor-empresa">
+<div class="container ux-shell">
+    <nav class="page-nav ux-page-nav">
+        <div class="nav-group ux-nav-group">
+            <button class="nav-button ux-button" onclick="history.back()">← Atrás</button>
+            <a class="nav-button ux-button" href="index.html">⌂ Inicio</a>
+        </div>
+        <div class="nav-group ux-nav-group">
+            <a class="nav-button ux-button" href="gestor-empresa.html">✏️ Editar notas</a>
+            <button class="nav-button ux-button" onclick="cargar()">↺ Recargar</button>
+        </div>
+    </nav>
+
+    <header class="ux-page-header">
+        <h1>Notas de Empresa</h1>
+        <p id="fileLabel"></p>
+    </header>
+    <main class="ux-content">
+        <section class="filter-bar" aria-label="Filtros de alumnos">
+            <div class="filter-field">
+                <label for="visorEmpresaSearchInput">Buscar alumno</label>
+                <input id="visorEmpresaSearchInput" type="search" placeholder="Nombre del alumno" autocomplete="off">
+            </div>
+            <div class="filter-field">
+                <label for="visorEmpresaDualFilter">Filtro</label>
+                <select id="visorEmpresaDualFilter">
+                    <option value="all">Todos</option>
+                    <option value="dual">Solo dual</option>
+                    <option value="no-dual">Solo no dual</option>
+                    <option value="approved">Dual aprobados</option>
+                    <option value="failed">Dual suspensos</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="visorEmpresaSort">Orden</label>
+                <select id="visorEmpresaSort">
+                    <option value="name-asc">Nombre (A-Z)</option>
+                    <option value="name-desc">Nombre (Z-A)</option>
+                    <option value="dual-first">Dual primero</option>
+                    <option value="grade-desc">Nota empresa (mayor-menor)</option>
+                    <option value="grade-asc">Nota empresa (menor-mayor)</option>
+                </select>
+            </div>
+            <div class="result-count" id="visorEmpresaResultCount">0 alumnos</div>
+        </section>
+        <div id="content"><div class="loading">Cargando...</div></div>
+    </main>
+</div>
+
+<script>
+    const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    let alumnos = [];
+    let openPanel = null;
+    let selectedRa = {};
+    let searchQuery = "";
+    let dualFilter = "all";
+    let sortMode = "name-asc";
+    let currentFileName = "";
+
+    function normalizedText(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function getVisibleAlumnos() {
+        const filtered = alumnos.filter((a) => {
+            const nameMatch = !searchQuery || normalizedText(a.nombre).includes(searchQuery);
+            if (!nameMatch) return false;
+            const dual = a.dual !== false;
+            const nota = typeof a.nota === 'number' ? a.nota : 0;
+            if (dualFilter === 'dual') return dual;
+            if (dualFilter === 'no-dual') return !dual;
+            if (dualFilter === 'approved') return dual && nota >= 5;
+            if (dualFilter === 'failed') return dual && nota > 0 && nota < 5;
+            return true;
+        });
+
+        const sorted = filtered.slice();
+        sorted.sort((a, b) => {
+            const nameA = normalizedText(a.nombre);
+            const nameB = normalizedText(b.nombre);
+            const gradeA = typeof a.nota === 'number' ? a.nota : -1;
+            const gradeB = typeof b.nota === 'number' ? b.nota : -1;
+            const dualA = a.dual !== false ? 1 : 0;
+            const dualB = b.dual !== false ? 1 : 0;
+
+            if (sortMode === 'name-desc') return nameB.localeCompare(nameA, 'es');
+            if (sortMode === 'dual-first') {
+                if (dualB !== dualA) return dualB - dualA;
+                return nameA.localeCompare(nameB, 'es');
+            }
+            if (sortMode === 'grade-desc') {
+                if (gradeB !== gradeA) return gradeB - gradeA;
+                return nameA.localeCompare(nameB, 'es');
+            }
+            if (sortMode === 'grade-asc') {
+                if (gradeA !== gradeB) return gradeA - gradeB;
+                return nameA.localeCompare(nameB, 'es');
+            }
+            return nameA.localeCompare(nameB, 'es');
+        });
+        return sorted;
+    }
+
+    function rerenderFromCache() {
+        render({ alumnos, fileName: currentFileName });
+    }
+
+    function gradeClass(n) {
+        if (typeof n !== 'number' || n === 0) return 'empty';
+        if (n >= 5) return 'ok';
+        if (n >= 3) return 'warn';
+        return 'bad';
+    }
+
+    function fmt(n) {
+        if (typeof n !== 'number' || n === 0) return '—';
+        return n.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+    }
+
+    function togglePanel(rowIdx) {
+        const panel = document.getElementById(`panel-${rowIdx}`);
+        const btn = document.getElementById(`btn-expand-${rowIdx}`);
+        if (!panel) return;
+        const isOpen = panel.classList.contains('open');
+        if (openPanel !== null && openPanel !== rowIdx) {
+            const prev = document.getElementById(`panel-${openPanel}`);
+            const prevBtn = document.getElementById(`btn-expand-${openPanel}`);
+            if (prev) prev.classList.remove('open');
+            if (prevBtn) { prevBtn.classList.remove('active'); prevBtn.textContent = '▼ RA / CE'; }
+        }
+        panel.classList.toggle('open', !isOpen);
+        btn.classList.toggle('active', !isOpen);
+        btn.textContent = isOpen ? '▼ RA / CE' : '▲ RA / CE';
+        openPanel = isOpen ? null : rowIdx;
+        if (!isOpen) renderCePanel(rowIdx);
+    }
+
+    function selectRa(rowIdx, raNum) {
+        selectedRa[rowIdx] = raNum;
+        const alumno = alumnos.find(a => a.rowIdx === rowIdx);
+        if (!alumno) return;
+        alumno.raNotas.forEach(ra => {
+            const chip = document.getElementById(`ra-chip-${rowIdx}-${ra.numero}`);
+            if (chip) chip.classList.toggle('selected', ra.numero === raNum);
+        });
+        renderCePanel(rowIdx);
+    }
+
+    function renderCePanel(rowIdx) {
+        const alumno = alumnos.find(a => a.rowIdx === rowIdx);
+        if (!alumno) return;
+        const raNum = selectedRa[rowIdx] || (alumno.raNotas[0] && alumno.raNotas[0].numero);
+        const ra = alumno.raNotas.find(r => r.numero === raNum);
+        const ceContainer = document.getElementById(`ce-list-${rowIdx}`);
+        if (!ceContainer || !ra) return;
+        const ceChips = (ra.ceNotas || []).map(ce => {
+            const cls = gradeClass(ce.nota);
+            return `<span class="ce-chip ${cls}">${esc(ce.codigo)} <strong>${fmt(ce.nota)}</strong></span>`;
+        }).join('');
+        ceContainer.innerHTML = ceChips || '<span style="color:#9ca3af;font-size:0.82rem;">Sin datos CE</span>';
+    }
+
+    function buildPanel(a) {
+        const raNotas = a.raNotas || [];
+        if (!raNotas.length) return '';
+        const firstRa = raNotas[0] ? raNotas[0].numero : null;
+        if (!selectedRa[a.rowIdx]) selectedRa[a.rowIdx] = firstRa;
+
+        const raChips = raNotas.map(ra => `
+            <span class="ra-chip ${ra.numero === firstRa ? 'selected' : ''}"
+                  id="ra-chip-${a.rowIdx}-${ra.numero}"
+                  onclick="selectRa(${a.rowIdx}, ${ra.numero})">
+                RA ${ra.numero} <strong>${fmt(ra.nota)}</strong>
+            </span>
+        `).join('');
+
+        return `<tr class="ra-panel" id="panel-${a.rowIdx}">
+            <td colspan="4">
+                <div class="ra-panel-inner">
+                    <div class="ra-list">${raChips}</div>
+                    <div class="ce-list" id="ce-list-${a.rowIdx}"></div>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    function render(data) {
+        alumnos = data.alumnos || [];
+        currentFileName = data.fileName || "";
+        openPanel = null;
+        selectedRa = {};
+        document.getElementById('fileLabel').textContent = data.fileName ? `— ${data.fileName}` : '';
+
+        const visible = getVisibleAlumnos();
+        document.getElementById('visorEmpresaResultCount').textContent = `${visible.length} de ${alumnos.length} alumnos`;
+
+        if (!alumnos.length) {
+            document.getElementById('content').innerHTML = '<div class="loading">No se encontraron alumnos en la hoja EMPRESA.</div>';
+            return;
+        }
+
+        if (!visible.length) {
+            document.getElementById('content').innerHTML = '<div class="loading">No hay resultados para el filtro actual.</div>';
+            return;
+        }
+
+        const rows = visible.map(a => {
+            const dual = a.dual !== false;
+            return `
+            <tr class="${dual ? '' : 'not-dual'}">
+                <td>${esc(a.nombre)}</td>
+                <td class="td-dual">
+                    <span class="dual-pill ${dual ? '' : 'no'}">${dual ? 'Sí' : 'No'}</span>
+                </td>
+                <td class="td-nota">
+                    <span class="grade ${gradeClass(a.nota)} ux-grade">${dual ? fmt(a.nota) : '—'}</span>
+                </td>
+                <td class="td-expand">
+                    ${dual && (a.raNotas || []).length ? `<button class="btn-expand" id="btn-expand-${a.rowIdx}" onclick="togglePanel(${a.rowIdx})">▼ RA / CE</button>` : ''}
+                </td>
+            </tr>
+            ${dual ? buildPanel(a) : ''}
+        `}).join('');
+
+        document.getElementById('content').innerHTML = `
+            <div class="table-wrap ux-table-wrap">
+                <table class="ux-table">
+                    <thead>
+                        <tr>
+                            <th>Alumno/a</th>
+                            <th class="th-nota">Empresa</th>
+                            <th class="th-nota">Nota empresa</th>
+                            <th style="width:110px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    async function cargar() {
+        document.getElementById('content').innerHTML = '<div class="loading">Cargando...</div>';
+        try {
+            const data = await window.electronExcel.getNotasEmpresa();
+            if (!data) throw new Error('Sin datos');
+            render(data);
+        } catch (e) {
+            document.getElementById('content').innerHTML = `<div class="error">Error: ${esc(String(e))}</div>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.electronExcel || !window.electronExcel.isAvailable) {
+            document.getElementById('content').innerHTML = '<div class="error">Solo disponible en la aplicación de escritorio.</div>';
+            return;
+        }
+
+        const searchInput = document.getElementById('visorEmpresaSearchInput');
+        const dualFilterSelect = document.getElementById('visorEmpresaDualFilter');
+        const sortSelect = document.getElementById('visorEmpresaSort');
+
+        searchInput.addEventListener('input', (event) => {
+            searchQuery = String(event.target.value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+            rerenderFromCache();
+        });
+
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                if (searchInput.value) {
+                    searchInput.value = '';
+                    searchQuery = '';
+                    rerenderFromCache();
+                }
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                rerenderFromCache();
+            }
+        });
+
+        dualFilterSelect.addEventListener('change', (event) => {
+            dualFilter = event.target.value || 'all';
+            rerenderFromCache();
+        });
+
+        sortSelect.addEventListener('change', (event) => {
+            sortMode = event.target.value || 'name-asc';
+            rerenderFromCache();
+        });
+
+        [dualFilterSelect, sortSelect].forEach((select) => {
+            select.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    rerenderFromCache();
+                }
+            });
+        });
+
+        cargar();
+    });
+</script>
+</body>
+</html>
