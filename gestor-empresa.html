@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas Empresa</title>
+    <script src="app-bridge.js"></script>
+    <link rel="stylesheet" href="ux-common.css">
+    <script src="ux-common.js" defer></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            padding: 20px;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
+            background: #f3f6fb;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 42px rgba(31,41,55,0.16);
+            overflow: hidden;
+        }
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .nav-group { display: flex; gap: 10px; }
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #374151;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .nav-button:hover { border-color: #6366f1; background: #f5f3ff; }
+        .nav-button.primary { background: #6366f1; color: #fff; border-color: #6366f1; }
+        .nav-button.primary:hover { background: #4f46e5; }
+
+        .section-title {
+            padding: 18px 20px 8px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1e1b4b;
+            border-bottom: 2px solid #e0e7ff;
+        }
+        .section-subtitle { font-size: 0.82rem; font-weight: 500; color: #6b7280; margin-left: 8px; }
+
+        .table-wrap { overflow-x: auto; padding: 0 0 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+        thead th {
+            background: #6366f1;
+            color: #fff;
+            font-weight: 800;
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 2px solid #4f46e5;
+            white-space: nowrap;
+        }
+        thead th.th-nota { text-align: center; min-width: 120px; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody tr:hover { background: #eef2ff; }
+        tbody tr.not-dual { color: #6b7280; background: #f8fafc; }
+        tbody tr.not-dual:hover { background: #f1f5f9; }
+        tbody td { padding: 8px 16px; border-bottom: 1px solid #f0f0f0; }
+        tbody td.td-nota { text-align: center; }
+        tbody td.td-dual { text-align: center; width: 120px; }
+
+        .dual-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-width: 86px;
+            padding: 5px 9px;
+            border: 1px solid #c7d2fe;
+            border-radius: 999px;
+            color: #3730a3;
+            background: #eef2ff;
+            font-size: 0.82rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .dual-toggle input { width: 15px; height: 15px; accent-color: #4f46e5; }
+        .dual-toggle.not-dual {
+            color: #6b7280;
+            border-color: #e5e7eb;
+            background: #f3f4f6;
+        }
+
+        input[type="number"].nota-input {
+            width: 90px;
+            padding: 6px 8px;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            font: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-align: center;
+            color: #1e1b4b;
+            background: #fff;
+            transition: border-color 0.15s;
+        }
+        input[type="number"].nota-input:focus { outline: none; border-color: #6366f1; background: #f5f3ff; }
+        input[type="number"].nota-input.modified { border-color: #f59e0b; background: #fffbeb; }
+        input[type="number"].nota-input:disabled {
+            color: #9ca3af;
+            border-color: #e5e7eb;
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        .grade { display: inline-block; padding: 2px 10px; border-radius: 6px; font-weight: 700; font-size: 0.88rem; }
+        .grade.ok    { background: #dcfce7; color: #166534; }
+        .grade.warn  { background: #fef3c7; color: #92400e; }
+
+        .grade.bad   { background: #fee2e2; color: #991b1b; }
+        .grade.empty { background: #f3f4f6; color: #9ca3af; }
+
+        .loading { padding: 40px; text-align: center; color: #6366f1; font-weight: 700; }
+        .error   { padding: 20px; color: #991b1b; font-weight: 600; }
+
+        .filter-bar {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) minmax(170px, 220px) auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 14px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f8f9ff;
+        }
+        .filter-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #4b5563;
+        }
+        .filter-field input,
+        .filter-field select {
+            width: 100%;
+            min-height: 36px;
+            padding: 7px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font: inherit;
+            background: #fff;
+        }
+        .result-count {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #4b5563;
+            white-space: nowrap;
+        }
+
+        .save-bar {
+            position: sticky;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 20px;
+            background: #fff;
+            border-top: 2px solid #e0e7ff;
+            box-shadow: 0 -4px 16px rgba(99,102,241,0.10);
+        }
+        .save-status { font-size: 0.88rem; font-weight: 600; color: #6b7280; }
+        .save-status.dirty { color: #f59e0b; }
+        .save-status.saving { color: #4f46e5; }
+        .save-status.saved { color: #16a34a; }
+        .save-status.error { color: #b91c1c; }
+
+        @media (max-width: 760px) {
+            .filter-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="ux-app-shell ux-page-gestor-empresa">
+<div class="container ux-shell">
+    <nav class="page-nav ux-page-nav">
+        <div class="nav-group ux-nav-group">
+            <button class="nav-button ux-button" onclick="history.back()">← Atrás</button>
+            <a class="nav-button ux-button" href="index.html">⌂ Inicio</a>
+        </div>
+        <div class="nav-group ux-nav-group">
+            <a class="nav-button ux-button" href="visor-empresa.html">👁 Ver notas</a>
+            <button class="nav-button primary ux-button" id="btnGuardarTop" onclick="guardar()" disabled>Guardar</button>
+            <button class="nav-button ux-button" onclick="recargar()">↺ Recargar</button>
+        </div>
+    </nav>
+
+    <header class="ux-page-header">
+        <h1>Notas de Empresa</h1>
+        <p id="fileLabel"></p>
+    </header>
+    <main class="ux-content">
+        <section class="filter-bar" aria-label="Filtros de alumnos">
+            <div class="filter-field">
+                <label for="empresaSearchInput">Buscar alumno</label>
+                <input id="empresaSearchInput" type="search" placeholder="Nombre del alumno" autocomplete="off">
+            </div>
+            <div class="filter-field">
+                <label for="empresaDualFilter">Filtro</label>
+                <select id="empresaDualFilter">
+                    <option value="all">Todos</option>
+                    <option value="dual">Solo dual</option>
+                    <option value="no-dual">Solo no dual</option>
+                    <option value="pending">Dual sin nota</option>
+                </select>
+            </div>
+            <div class="result-count" id="empresaResultCount">0 alumnos</div>
+        </section>
+        <div id="content"><div class="loading">Cargando...</div></div>
+    </main>
+    <div class="save-bar ux-save-bar">
+        <span class="save-status" id="saveStatus">Sin cambios</span>
+        <button class="nav-button primary ux-button" id="btnGuardar" onclick="guardar()" disabled>💾 Guardar</button>
+    </div>
+</div>
+
+<script>
+    const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    let alumnos = [];
+    let modificados = new Set();
+    let autoSaveDualTimeout = null;
+    let searchQuery = "";
+    let dualFilter = "all";
+    let lastSavedAt = null;
+
+    function updateSaveButtons(disabled) {
+        document.getElementById('btnGuardar').disabled = disabled;
+        document.getElementById('btnGuardarTop').disabled = disabled;
+    }
+
+    function setSaveState(state, text) {
+        const status = document.getElementById('saveStatus');
+        status.textContent = text;
+        status.className = `save-status ${state}`.trim();
+    }
+
+    function formatTime(value) {
+        return value.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getVisibleAlumnos() {
+        const normalized = (value) => String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+
+        return alumnos.filter((a) => {
+            const nameMatch = !searchQuery || normalized(a.nombre).includes(searchQuery);
+            if (!nameMatch) return false;
+            if (dualFilter === 'dual') return a.dual !== false;
+            if (dualFilter === 'no-dual') return a.dual === false;
+            if (dualFilter === 'pending') return a.dual !== false && !(typeof a.nota === 'number' && a.nota > 0);
+            return true;
+        });
+    }
+
+    function gradeClass(n) {
+        if (typeof n !== 'number' || n === 0) return 'empty';
+        if (n >= 5) return 'ok';
+        if (n >= 3) return 'warn';
+        return 'bad';
+    }
+
+    function fmt(n) {
+        if (typeof n !== 'number' || n === 0) return '—';
+        return n.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+    }
+
+    function marcarCambio(rowIdx) {
+        modificados.add(rowIdx);
+        setSaveState('dirty', `${modificados.size} cambio(s) sin guardar`);
+        updateSaveButtons(false);
+    }
+
+    function programarGuardadoDual() {
+        if (autoSaveDualTimeout) clearTimeout(autoSaveDualTimeout);
+        autoSaveDualTimeout = setTimeout(() => {
+            if (modificados.size > 0) guardar({ automatico: true });
+        }, 2000);
+    }
+
+    function onNotaChange(rowIdx, value) {
+        const alumno = alumnos.find(a => a.rowIdx === rowIdx);
+        if (!alumno) return;
+        if (alumno.dual === false) return;
+        const num = parseFloat(String(value).replace(',', '.'));
+        alumno.nota = isNaN(num) ? 0 : Math.min(10, Math.max(0, num));
+        alumno.display = alumno.nota > 0 ? fmt(alumno.nota) : '';
+        const badge = document.getElementById(`badge-${rowIdx}`);
+        if (badge) {
+            badge.className = `grade ${gradeClass(alumno.nota)} ux-grade`;
+            badge.textContent = fmt(alumno.nota);
+        }
+        const input = document.getElementById(`nota-${rowIdx}`);
+        if (input) input.classList.add('modified');
+        marcarCambio(rowIdx);
+    }
+
+    function onDualChange(rowIdx, checked) {
+        const alumno = alumnos.find(a => a.rowIdx === rowIdx);
+        if (!alumno) return;
+        alumno.dual = Boolean(checked);
+
+        const row = document.getElementById(`row-${rowIdx}`);
+        const toggle = document.getElementById(`dual-label-${rowIdx}`);
+        const toggleText = document.getElementById(`dual-text-${rowIdx}`);
+        const input = document.getElementById(`nota-${rowIdx}`);
+        const badge = document.getElementById(`badge-${rowIdx}`);
+
+        if (!alumno.dual) {
+            alumno.nota = 0;
+            alumno.display = '';
+            if (input) {
+                input.value = '';
+                input.disabled = true;
+                input.classList.remove('modified');
+            }
+        } else if (input) {
+            if ((!alumno.nota || alumno.nota <= 0) && alumno.notaOriginal > 0) {
+                alumno.nota = alumno.notaOriginal;
+                alumno.display = alumno.displayOriginal || fmt(alumno.nota);
+                input.value = alumno.nota;
+            }
+            input.disabled = false;
+            input.focus();
+        }
+
+        if (row) row.classList.toggle('not-dual', !alumno.dual);
+        if (toggle) toggle.classList.toggle('not-dual', !alumno.dual);
+        if (toggleText) toggleText.textContent = alumno.dual ? 'Sí' : 'No';
+        if (badge) {
+            badge.className = `grade ${gradeClass(alumno.nota)} ux-grade`;
+            badge.textContent = alumno.dual ? fmt(alumno.nota) : '—';
+        }
+
+        marcarCambio(rowIdx);
+        renderTable();
+        programarGuardadoDual();
+    }
+
+    function render(data) {
+        alumnos = data.alumnos || [];
+        document.getElementById('fileLabel').textContent = data.fileName ? `— ${data.fileName}` : '';
+
+        renderTable();
+    }
+
+    function renderTable() {
+        const visible = getVisibleAlumnos();
+        const resultCount = document.getElementById('empresaResultCount');
+        resultCount.textContent = `${visible.length} de ${alumnos.length} alumnos`;
+
+        if (!alumnos.length) {
+            document.getElementById('content').innerHTML = '<div class="loading">No se encontraron alumnos en la hoja EMPRESA.</div>';
+            return;
+        }
+
+        if (!visible.length) {
+            document.getElementById('content').innerHTML = '<div class="loading">No hay resultados para el filtro actual.</div>';
+            return;
+        }
+
+        const rows = visible.map(a => {
+            const dual = a.dual !== false;
+            return `
+            <tr id="row-${a.rowIdx}" class="${dual ? '' : 'not-dual'}">
+                <td>${esc(a.nombre)}</td>
+                <td class="td-dual">
+                    <label class="dual-toggle ${dual ? '' : 'not-dual'}" id="dual-label-${a.rowIdx}">
+                        <input
+                            type="checkbox"
+                            ${dual ? 'checked' : ''}
+                            onchange="onDualChange(${a.rowIdx}, this.checked)"
+                        />
+                        <span id="dual-text-${a.rowIdx}">${dual ? 'Sí' : 'No'}</span>
+                    </label>
+                </td>
+                <td class="td-nota">
+                    <span class="grade ${gradeClass(a.nota)} ux-grade" id="badge-${a.rowIdx}">${dual ? fmt(a.nota) : '—'}</span>
+                </td>
+                <td class="td-nota">
+                    <input
+                        type="number"
+                        class="nota-input"
+                        id="nota-${a.rowIdx}"
+                        min="0" max="10" step="0.01"
+                        value="${dual && a.nota > 0 ? a.nota : ''}"
+                        placeholder="0-10"
+                        ${dual ? '' : 'disabled'}
+                        onchange="onNotaChange(${a.rowIdx}, this.value)"
+                        oninput="onNotaChange(${a.rowIdx}, this.value)"
+                    />
+                </td>
+            </tr>
+        `}).join('');
+
+        document.getElementById('content').innerHTML = `
+            <div class="table-wrap ux-table-wrap">
+                <table class="ux-table">
+                    <thead>
+                        <tr>
+                            <th>Alumno/a</th>
+                            <th class="th-nota">Empresa</th>
+                            <th class="th-nota">Nota actual</th>
+                            <th class="th-nota">Nueva nota empresa</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    async function cargar() {
+        document.getElementById('content').innerHTML = '<div class="loading">Cargando...</div>';
+        modificados.clear();
+        lastSavedAt = null;
+        if (autoSaveDualTimeout) {
+            clearTimeout(autoSaveDualTimeout);
+            autoSaveDualTimeout = null;
+        }
+        setSaveState('clean', 'Sin cambios');
+        updateSaveButtons(true);
+        try {
+            const data = await window.electronExcel.getNotasEmpresa();
+            if (!data) throw new Error('Sin datos');
+            render(data);
+        } catch (e) {
+            document.getElementById('content').innerHTML = `<div class="error">Error: ${esc(String(e))}</div>`;
+        }
+    }
+
+    async function guardar(options = {}) {
+        if (autoSaveDualTimeout) {
+            clearTimeout(autoSaveDualTimeout);
+            autoSaveDualTimeout = null;
+        }
+        updateSaveButtons(true);
+        setSaveState('saving', options.automatico ? 'Guardando cambios de empresa...' : 'Guardando...');
+        try {
+            const notas = alumnos.map(a => ({
+                rowIdx: a.rowIdx,
+                dual: a.dual !== false,
+                nota: a.dual === false ? 0 : a.nota,
+                display: a.dual === false ? '' : a.display
+            }));
+            const data = await window.electronExcel.saveNotasEmpresa({ notas });
+            render(data);
+            modificados.clear();
+            lastSavedAt = new Date();
+            setSaveState('saved', `Guardado a las ${formatTime(lastSavedAt)}`);
+        } catch (e) {
+            setSaveState('error', 'Error al guardar: ' + String(e));
+            updateSaveButtons(false);
+        }
+    }
+
+    function recargar() { cargar(); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.electronExcel || !window.electronExcel.isAvailable) {
+            document.getElementById('content').innerHTML = '<div class="error">Solo disponible en la aplicación de escritorio.</div>';
+            return;
+        }
+
+        document.getElementById('empresaSearchInput').addEventListener('input', (event) => {
+            searchQuery = String(event.target.value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+            renderTable();
+        });
+
+        document.getElementById('empresaDualFilter').addEventListener('change', (event) => {
+            dualFilter = event.target.value || 'all';
+            renderTable();
+        });
+
+        cargar();
+    });
+</script>
+</body>
+</html>

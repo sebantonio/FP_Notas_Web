@@ -1,0 +1,27 @@
+{
+  "name": "plantilla-notas-local",
+  "version": "0.1.0",
+  "description": "Aplicacion local para gestionar alumnos en una plantilla Excel sincronizada con OneDrive.",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:debug": "tauri build --debug",
+    "tauri:build": "node scripts/tauri-build-versioned.js",
+    "tauri:build:versioned": "node scripts/tauri-build-versioned.js",
+    "tauri:build:plain": "tauri build",
+    "dev": "npm run tauri:dev",
+    "debug": "npm run tauri:debug",
+    "dist": "npm run tauri:build",
+    "dist:plain": "npm run tauri:build:plain",
+    "build": "npm run tauri:build",
+    "test": "node scripts/smoke-tests.js"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.0",
+    "jszip": "^3.10.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.1"
+  }
+}

@@ -1,0 +1,3147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de RRAA y Criterios - Excel</title>
+    <script src="app-bridge.js"></script>
+    <link rel="stylesheet" href="ux-common.css">
+    <script src="ux-common.js" defer></script>
+    <!-- XLSX - Librería principal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js" integrity="sha512-UQnhkjV2gIt8VYN8GjJ3xAVDQ7KZ4dKxPm0zw4yNdaWCSxbV9LJfMTXvx9qgHKmCHQCoKkJaAxCp4A9O3cZUg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- XLSX - Librería alternativa -->
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f6fb;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #3730a3;
+            color: white;
+            padding: 28px 30px;
+            text-align: left;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.05em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section h2 {
+            color: #6366f1;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #6366f1;
+        }
+
+        .section h3 {
+            color: #4338ca;
+            font-size: 1.1em;
+            margin: 20px 0 15px 0;
+        }
+
+        /* ÁREA DE CARGA */
+        .upload-area {
+            border: 3px dashed #6366f1;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #4338ca;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragging {
+            border-color: #4338ca;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        /* MENSAJES */
+        .message {
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* TABLA */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            table-layout: fixed;
+        }
+
+        table th {
+            background: #6366f1;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        table tr:hover {
+            background: #f8f9ff;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        table input[type="text"],
+        table input[type="number"],
+        table textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95em;
+            font-family: inherit;
+        }
+
+        table textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .col-numero {
+            width: 52px;
+        }
+
+        .col-ra {
+            width: 100px;
+        }
+
+        .col-codigo {
+            width: 74px;
+        }
+
+        .col-ponderacion {
+            width: 120px;
+        }
+
+        .col-accion {
+            width: 86px;
+        }
+
+        .codigo-input {
+            width: 58px !important;
+            min-width: 58px !important;
+            max-width: 58px !important;
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+
+        table input:focus,
+        table textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        }
+
+        .row-numero {
+            font-weight: 600;
+            color: #6366f1;
+            width: 50px;
+            text-align: center;
+        }
+
+        /* FORMULARIO DE NUEVO ELEMENTO */
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        input[type="number"] {
+            width: 120px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: inherit;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        button {
+            padding: 12px 25px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: #f0f0f0;
+            color: #6366f1;
+            border: 2px solid #6366f1;
+        }
+
+        button.secondary:hover {
+            background: #f8f9ff;
+        }
+
+        button.delete {
+            background: #ff6b6b;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            width: 100%;
+        }
+
+        button.delete:hover {
+            background: #ff5252;
+        }
+
+        /* ACCIONES */
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .actions-left {
+            display: flex;
+            gap: 10px;
+        }
+
+        .actions-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* ESTADÍSTICAS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #6366f1;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 2.2em;
+            font-weight: bold;
+        }
+
+        .count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            padding: 2px 9px;
+            background: #6366f1;
+            color: white;
+            border-radius: 999px;
+            font-size: 0.6em;
+            font-weight: 800;
+            vertical-align: middle;
+            margin-left: 8px;
+            line-height: 1.6;
+        }
+
+        .stats.compact-stats {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .stats.compact-stats .stat-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            width: auto;
+            min-width: 180px;
+            padding: 10px 14px;
+            text-align: left;
+        }
+
+        .stats.compact-stats .stat-card h3 {
+            margin: 0;
+            font-size: 0.82em;
+        }
+
+        .stats.compact-stats .stat-card .number {
+            margin-left: auto;
+            font-size: 1.55em;
+            line-height: 1;
+        }
+
+        .ra-inline-header td {
+            padding: 8px 12px;
+            color: #312e81;
+            background: #eef2ff;
+            border-top: 2px solid #c7d2fe;
+            border-bottom: 1px solid #c7d2fe;
+            font-size: 0.9em;
+            font-weight: 800;
+        }
+
+        .btn-guardar-flotante {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 200;
+            display: none;
+            padding: 12px 22px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font: inherit;
+            font-size: 0.97rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(99,102,241,0.45);
+            transition: background 0.15s, box-shadow 0.15s;
+        }
+        .btn-guardar-flotante:hover { background: #4f46e5; box-shadow: 0 6px 22px rgba(99,102,241,0.55); }
+        #tab-ponderaciones.active ~ .btn-guardar-flotante,
+        .btn-guardar-flotante.visible { display: block; }
+
+        .ra-inline-count {
+            margin-left: 8px;
+            color: #6b7280;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
+
+        /* LOADING */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #6366f1;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #6366f1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #6366f1;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: #4338ca;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #6366f1;
+            color: #6366f1;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .save-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .save-status.saving {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .save-status.saved {
+            background: #28a745;
+            color: white;
+        }
+
+        .save-status.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* RESUMEN PONDERACIONES */
+        .resumen-wrap {
+            overflow-x: auto;
+            max-height: 62vh;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .resumen-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.82em;
+            white-space: nowrap;
+        }
+
+        .resumen-table th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #6366f1;
+            color: white;
+            padding: 8px 10px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .resumen-table th.th-ce {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            min-width: 110px;
+        }
+
+        .resumen-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .resumen-table th.unidad-col {
+            border-left: 3px solid rgba(255,255,255,0.45);
+            box-shadow: inset 1px 0 0 rgba(255,255,255,0.18);
+        }
+
+        .resumen-table th.unidad-col-alt {
+            background: #5659e8;
+        }
+
+        .resumen-table td.unidad-col {
+            border-left: 3px solid #d9e2ff;
+            box-shadow: inset 1px 0 0 #f8fafc;
+        }
+
+        .resumen-table td.unidad-col-alt {
+            background: #f8fbff;
+        }
+
+        .resumen-table tr:hover td.unidad-col {
+            background: #f4f7ff;
+        }
+
+        .resumen-table th.resumen-total-col,
+        .resumen-table th.resumen-normalizado-col,
+        .resumen-table td.resumen-total-col,
+        .resumen-table td.resumen-normalizado-col {
+            border-left: 4px solid #c7d2fe;
+        }
+
+        .resumen-table .td-ce {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: white;
+            font-weight: 600;
+            white-space: normal;
+            max-width: 200px;
+        }
+
+        .tr-ra-header td {
+            background: #eef2ff;
+            color: #3730a3;
+            font-weight: 800;
+            font-size: 0.95em;
+            padding: 8px 10px;
+            border-top: 2px solid #c7d2fe;
+            border-bottom: 1px solid #c7d2fe;
+        }
+
+        .tr-ra-header .td-ce {
+            background: #eef2ff;
+        }
+
+        .tr-subtotal td {
+            background: #f0f3ff;
+            font-weight: 700;
+            border-top: 1px solid #c7d2fe;
+        }
+
+        .tr-subtotal td.unidad-col,
+        .tr-subtotal td.unidad-col-alt {
+            background: #eef2ff;
+        }
+
+        .tr-subtotal .td-ce {
+            background: #f0f3ff;
+            color: #4338ca;
+        }
+
+        .tr-grand-total td {
+            background: #3730a3;
+            color: white;
+            font-weight: 800;
+            font-size: 0.92em;
+            border-top: 2px solid #312e81;
+        }
+
+        .tr-grand-total td.unidad-col,
+        .tr-grand-total td.unidad-col-alt {
+            background: #4338ca;
+            border-left-color: #818cf8;
+        }
+
+        .tr-grand-total .td-ce {
+            background: #3730a3;
+            color: white;
+        }
+
+        .pct-cell {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .pct-zero { color: #d1d5db; font-weight: 400; }
+        .pct-low  { background: #fef3c7; color: #92400e; }
+        .pct-mid  { background: #dbeafe; color: #1e40af; }
+        .pct-high { background: #d1fae5; color: #065f46; }
+
+        .pct-stack {
+            display: inline-grid;
+            gap: 3px;
+            min-width: 74px;
+        }
+
+        .pct-stack-row {
+            display: grid;
+            grid-template-columns: 28px minmax(42px, 1fr);
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pct-stack-label {
+            color: #6b7280;
+            font-size: 0.72em;
+            font-weight: 800;
+            text-align: right;
+            text-transform: uppercase;
+        }
+
+        .tr-grand-total .pct-stack-label {
+            color: rgba(255,255,255,0.72);
+        }
+
+        .ra-pesos-panel {
+            border: 1px solid #dbe3ff;
+            border-radius: 8px;
+            background: #f8f9ff;
+            padding: 12px;
+            margin: 14px 0 10px;
+        }
+
+        .ra-pesos-panel h3 {
+            color: #3730a3;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+
+        .ra-pesos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 10px;
+        }
+
+        .ra-peso-card {
+            display: grid;
+            grid-template-columns: 46px minmax(56px, 70px) minmax(56px, 70px) minmax(66px, 1fr);
+            gap: 6px;
+            align-items: center;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .ra-peso-card strong {
+            color: #3730a3;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+
+        .ra-peso-card label {
+            display: grid;
+            gap: 3px;
+            color: #6b7280;
+            font-size: 0.64em;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .ra-peso-card input {
+            width: 100%;
+            min-width: 0;
+            padding: 6px;
+            font-size: 0.82em;
+        }
+
+        .ra-peso-total {
+            color: #111827;
+            font-weight: 800;
+            text-align: right;
+            min-width: 0;
+        }
+
+        .ra-peso-total-main {
+            display: block;
+            font-size: 1em;
+            line-height: 1.15;
+        }
+
+        .ra-peso-total-label {
+            display: block;
+            margin: 2px 0;
+            color: #6b7280;
+            font-size: 0.56em;
+            line-height: 1.1;
+            text-transform: uppercase;
+        }
+
+        .ra-peso-total-split {
+            display: block;
+            font-size: 0.86em;
+            line-height: 1.15;
+            white-space: nowrap;
+        }
+
+        .ra-peso-summary-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            grid-column: span 2;
+            min-height: 78px;
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 6px;
+            padding: 12px 16px;
+        }
+
+        .ra-peso-summary-card.error {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        .ra-peso-summary-card strong {
+            color: #065f46;
+            display: block;
+            font-size: 0.95em;
+            margin-bottom: 4px;
+        }
+
+        .ra-peso-summary-card.error strong {
+            color: #991b1b;
+        }
+
+        .ra-peso-summary-card p {
+            color: #4b5563;
+            font-size: 0.82em;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .ra-peso-summary-value {
+            color: #065f46;
+            font-size: 1.5em;
+            font-weight: 900;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .ra-peso-summary-card.error .ra-peso-summary-value {
+            color: #b91c1c;
+        }
+
+        .resumen-legend {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            font-size: 0.83em;
+            color: #6b7280;
+        }
+
+        .resumen-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* RESPONSIVO */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .form-group {
+                flex-direction: column;
+            }
+
+            input[type="text"] {
+                min-width: unset;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .actions-left,
+            .actions-right {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .ra-peso-summary-card {
+                grid-column: span 1;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            table td, table th {
+                padding: 8px 10px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
+
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .nav-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav-button,
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            width: auto;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.92em;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .nav-button {
+            background: white;
+            color: #6366f1;
+            border: 2px solid #6366f1;
+        }
+
+        .nav-button:hover {
+            background: #f0f2ff;
+            transform: translateY(-1px);
+        }
+
+        .nav-link {
+            background: #6366f1;
+            color: white;
+            border: 2px solid #6366f1;
+        }
+
+        .nav-link:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .page-nav {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .nav-group {
+                width: 100%;
+            }
+
+            .page-nav .nav-button,
+            .page-nav .nav-link {
+                flex: 1;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body class="ux-app-shell ux-page-gestor-rraa-criterios">
+    <div id="saveStatus" class="save-status" style="display: none;"></div>
+
+    <div class="container ux-shell">
+        <nav class="page-nav ux-page-nav" aria-label="Navegación">
+            <div class="nav-group ux-nav-group">
+                <button class="nav-button ux-button" type="button" onclick="window.history.back()">← Atrás</button>
+                <a class="nav-link ux-link-button primary" href="index.html">⌂ Inicio</a>
+            </div>
+        </nav>
+
+        <div class="header ux-page-header">
+            <h1>📚 Gestor de RRAA y Criterios</h1>
+            <p>Resultados de Aprendizaje y Criterios de Evaluación</p>
+        </div>
+
+        <div class="content ux-content">
+            <!-- MENSAJES -->
+            <div id="message" class="message"></div>
+
+            <!-- SECCIÓN 1: CARGA DE ARCHIVO -->
+            <div class="section">
+                <h2>1️⃣ Cargar Archivo Excel</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text"><strong>Arrastra tu archivo aquí</strong></div>
+                    <div class="upload-hint">o haz clic para seleccionar</div>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" />
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: GESTIÓN DE RRAA Y CRITERIOS (inicialmente oculta) -->
+            <div id="mainContent" style="display: none;">
+                <!-- TABS -->
+                <div class="tabs ux-tabs">
+                    <button class="tab-btn active ux-tab" onclick="cambiarTab('rraa')">🎯 RRAA</button>
+                    <button class="tab-btn ux-tab" onclick="cambiarTab('criterios')">✓ Criterios</button>
+                    <button class="tab-btn ux-tab" onclick="cambiarTab('ponderaciones')">⚖ Ponderación por unidad</button>
+                    <button class="tab-btn ux-tab" onclick="cambiarTab('resumen')">📊 Resumen</button>
+                </div>
+
+                <!-- TAB: RRAA -->
+                <div id="tab-rraa" class="tab-content active">
+                    <div class="section">
+                        <h2>2️⃣ Resultados de Aprendizaje (RRAA) <span class="count-badge" id="totalRRAA">0</span></h2>
+
+                        <!-- TABLA RRAA -->
+                        <h3>RRAA Actuales</h3>
+                        <p class="ux-field-help">% Final = peso del RA en la nota del módulo. % Instituto + % Empresa deben sumar 100%.</p>
+                        <div class="table-container ux-table-wrap">
+                            <table id="rraaTable" class="ux-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Nº</th>
+                                        <th>Resultado de Aprendizaje</th>
+                                        <th style="width: 80px;">% Final</th>
+                                        <th style="width: 100px;">% Instituto</th>
+                                        <th style="width: 100px;">% Empresa</th>
+                                        <th style="width: 80px;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rraaTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="emptyStateRRAA" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">📭</div>
+                            <p>No hay RRAA registrados</p>
+                        </div>
+
+                        <!-- AGREGAR NUEVO RRAA -->
+                        <h3>Agregar Nuevo RRAA</h3>
+                        <div class="form-group">
+                            <textarea id="nuevoRRAA" placeholder="Descripción del Resultado de Aprendizaje"></textarea>
+                        </div>
+                        <button onclick="agregarRRAA()" style="width: 100%;">➕ Agregar RRAA</button>
+                    </div>
+                </div>
+
+                <!-- TAB: CRITERIOS -->
+                <div id="tab-criterios" class="tab-content">
+                    <div class="section">
+                        <h2>2️⃣ Criterios de Evaluación</h2>
+                        <div class="stats compact-stats ux-summary">
+                            <div class="stat-card ux-stat">
+                                <h3>Total Criterios</h3>
+                                <div class="number" id="totalCriterios">0</div>
+                            </div>
+                        </div>
+
+                        <!-- TABLA CRITERIOS -->
+                        <h3>Criterios Actuales</h3>
+                        <div class="form-group" style="align-items: center; margin-bottom: 15px;">
+                            <button class="secondary" type="button" onclick="alternarMenuRA()" style="width: auto;">☰ RA</button>
+                            <select id="criterioRaFiltro" onchange="seleccionarRAFiltro(this.value)" style="flex: 1;"></select>
+                            <input type="search" id="criterioSearchInput" placeholder="Buscar CE por codigo o texto" autocomplete="off" style="flex: 1;" />
+                        </div>
+                        <p class="ux-field-help">Por defecto se muestran todos los RA agrupados. Usa el desplegable solo si quieres centrarte en uno.</p>
+                        <div style="background:#eef2ff;border-left:4px solid #6366f1;border-radius:4px;padding:10px 14px;margin-bottom:12px;font-size:0.93em;color:#3730a3;font-weight:600;">
+                            Los porcentajes <strong>Final, Instituto y Empresa</strong> de cada criterio representan su peso acumulado a lo largo de <strong>todo el curso</strong>. Son informativos y se calculan automáticamente a partir de las ponderaciones por unidad.
+                        </div>
+                        <div class="table-container ux-table-wrap">
+                            <table id="criteriosTable" class="ux-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-numero">Nº</th>
+                                        <th class="col-ra">RA</th>
+                                        <th class="col-codigo">Código</th>
+                                        <th>Criterio de Evaluación</th>
+                                        <th class="col-ponderacion">Final</th>
+                                        <th class="col-ponderacion">Instituto</th>
+                                        <th class="col-ponderacion">Empresa</th>
+                                        <th class="col-accion">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="criteriosTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="emptyStateCriterios" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">📭</div>
+                            <p>No hay criterios registrados</p>
+                        </div>
+
+                        <!-- AGREGAR NUEVO CRITERIO -->
+                        <h3>Agregar Nuevo Criterio</h3>
+                        <div class="form-group">
+                            <select id="nuevoCriterioRA" style="min-width: 120px;"></select>
+                            <input class="codigo-input" type="text" id="nuevoCriterio" placeholder="1.a)" maxlength="6" />
+                            <textarea id="nuevoCriterioTexto" placeholder="Texto del criterio de evaluación" style="flex: 1;"></textarea>
+                            <input type="number" id="nuevoPonderacion" placeholder="Final auto" min="0" max="1" step="0.01" readonly />
+                            <input type="number" id="nuevoPonderacionInstituto" placeholder="Instituto" min="0" max="1" step="0.01" oninput="actualizarNuevaPonderacionFinal()" />
+                            <input type="number" id="nuevoPonderacionEmpresa" placeholder="Empresa" min="0" max="1" step="0.01" oninput="actualizarNuevaPonderacionFinal()" />
+                            <button onclick="agregarCriterio()">➕ Agregar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-ponderaciones" class="tab-content">
+                    <div class="section">
+                        <h2>3️⃣ Ponderación de CCEE por Unidad</h2>
+                        <div class="form-group" style="align-items: center; margin-bottom: 10px;">
+                            <select id="ponderacionRaFiltro" onchange="seleccionarRAPonderacion(this.value)" style="flex: 1;"></select>
+                            <input type="search" id="ponderacionSearchInput" placeholder="Buscar CE" autocomplete="off" style="flex: 1;" />
+                            <button class="secondary" type="button" onclick="refrescarDesdeExcel()" style="width: auto;">Actualizar desde Excel</button>
+                        </div>
+                        <p class="ux-field-help">Matriz CE × Unidad. Edita el peso (%) directamente en cada celda. Instituto y Empresa se calculan automáticamente.</p>
+
+                        <div id="ponderacionesMatrizWrap" style="overflow-x:auto;border:1px solid #e0e0e0;border-radius:8px;margin-top:8px;">
+                            <table id="ponderacionesTable" style="border-collapse:collapse;font-size:0.82em;white-space:nowrap;min-width:100%" class="ux-table">
+                                <thead id="ponderacionesTableHead"></thead>
+                                <tbody id="ponderacionesTableBody"></tbody>
+                            </table>
+                        </div>
+                        <!-- hidden select kept for backwards compat with actualizarOpcionesPonderacion -->
+                        <select id="unidadPonderacionSelect" style="display:none" onchange="seleccionarUnidadPonderacion(this.value)"></select>
+                    </div>
+                </div>
+
+                <!-- TAB: RESUMEN -->
+                <div id="tab-resumen" class="tab-content">
+                    <div class="section">
+                        <h2>📊 Resumen de ponderaciones</h2>
+                        <p style="color:#6b7280; margin-bottom:12px; font-size:0.93em;">
+                            Distribución de pesos de cada criterio (CE) por unidad de trabajo. La columna <strong>Total</strong> muestra el peso acumulado del CE en todo el módulo.
+                        </p>
+                        <div class="resumen-legend">
+                            <span><span class="pct-cell pct-low">5%</span> ≤ 5%</span>
+                            <span><span class="pct-cell pct-mid">10%</span> 6–15%</span>
+                            <span><span class="pct-cell pct-high">20%</span> &gt; 15%</span>
+                            <span><span class="pct-cell pct-zero">—</span> Sin peso</span>
+                            <button class="secondary" type="button" onclick="refrescarDesdeExcel()" style="width: auto; margin-left: auto; padding: 8px 12px;">Actualizar desde Excel</button>
+                        </div>
+                        <div id="resumenContent">
+                            <div class="empty-state"><div class="empty-state-icon">📊</div><p>Carga el archivo para ver el resumen.</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón guardar flotante (visible solo en pestaña ponderaciones) -->
+                <button class="btn-guardar-flotante" id="btnGuardarFlotante" onclick="guardarCambiosForzado()">💾 Guardar</button>
+
+                <!-- SECCIÓN 3: ACCIONES FINALES -->
+                <div class="section" style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+                    <div class="actions">
+                        <div class="actions-left">
+                            <button class="secondary" onclick="cargarNuevo()">🔄 Cargar Otro Archivo</button>
+                            <button class="secondary" onclick="mostrarOpcionesImportacion()">📂 Importar RRAA, CE, Unidades</button>
+                            <button onclick="guardarCambiosForzado()" style="background: #17a2b8; color: white;">💾 Guardar Cambios Ahora</button>
+                        </div>
+                        <div class="actions-right">
+                            <button onclick="descargarExcel()">📥 Descargar Excel Actualizado</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOADING -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Procesando archivo...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== VARIABLES GLOBALES =====
+        let workbook = null;
+        let archivoOriginal = null;
+        let xlsxReady = false;
+        let raaaActuales = [];
+        let criteriosActuales = [];
+        let ponderacionesUnidad = [];
+        let raPesos = [];
+        const ALL_RA_VALUE = 'todos';
+        let criterioRaActivo = ALL_RA_VALUE;
+        let ponderacionUnidadActiva = null;
+        let ponderacionRaActiva = ALL_RA_VALUE;
+        let criterioBusqueda = '';
+        const isElectronMode = Boolean(window.electronExcel);
+        let autoSaveTimeout = null;
+        let hayChangesSinGuardar = false;
+        const _BASE_TITLE = document.title;
+        let archivoModificadoUnix = 0;
+        let comprobandoActualizacion = false;
+        const AUTO_SAVE_DELAY_MS = 10000;
+
+        // ===== VERIFICACIÓN DE LIBRERÍA XLSX =====
+        function checkXLSX() {
+            if (isElectronMode) {
+                xlsxReady = true;
+                return true;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                return false;
+            }
+            xlsxReady = true;
+            return true;
+        }
+
+        // Verificar que XLSX esté disponible
+        setTimeout(() => {
+            if (!checkXLSX()) {
+                setTimeout(checkXLSX, 500);
+            }
+        }, 100);
+
+        // ===== DRAG & DROP =====
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const criterioSearchInput = document.getElementById('criterioSearchInput');
+        const ponderacionSearchInput = document.getElementById('ponderacionSearchInput');
+
+        [criterioSearchInput, ponderacionSearchInput].forEach((input) => {
+            if (!input) return;
+            input.addEventListener('input', () => {
+                criterioBusqueda = normalizarBusqueda(input.value);
+                [criterioSearchInput, ponderacionSearchInput].forEach((other) => {
+                    if (other && other !== input) other.value = input.value;
+                });
+                mostrarTablaCriterios();
+                mostrarTablaPonderacionesUnidad();
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isElectronMode) {
+                seleccionarArchivoLocal({ auto: true });
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            comprobarActualizacionExterna();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                comprobarActualizacionExterna();
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            if (isElectronMode) {
+                seleccionarArchivoLocal();
+                return;
+            }
+
+            if (!xlsxReady) {
+                mostrarMensaje('⚠️ Cargando librerías...', 'info');
+                return;
+            }
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragging');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragging');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragging');
+            if (isElectronMode) {
+                mostrarMensaje('Usa el selector de archivo para conectar el Excel local.', 'info');
+                return;
+            }
+            if (!xlsxReady) {
+                mostrarMensaje('⚠️ Cargando librerías...', 'info');
+                return;
+            }
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Si ya hay datos cargados, es una importación; si no, es una carga inicial
+                if (document.getElementById('mainContent').style.display === 'block') {
+                    importarDesdeArchivo(files[0]);
+                } else {
+                    cargarArchivo(files[0]);
+                }
+            }
+        });
+
+        async function seleccionarArchivoLocal(options = {}) {
+            try {
+                if (!options.silent) {
+                    mostrarLoading(true);
+                }
+                const result = await window.electronExcel.getRraaCriterios();
+
+                if (!result) {
+                    mostrarMensaje(options.auto ? 'Selecciona un Excel local para cargar RRAA y CE.' : 'No se encontró un Excel activo.', options.auto ? 'info' : 'error');
+                    mostrarLoading(false);
+                    return;
+                }
+
+                archivoOriginal = { name: result.fileName, path: result.filePath };
+                workbook = null;
+                raaaActuales = result.rraa;
+                criteriosActuales = result.criterios;
+                ponderacionesUnidad = result.ponderacionesUnidad || [];
+                raPesos = normalizarRaPesos(result.raPesos || []);
+                recalcularTodasInstEmpresa();
+                criterioRaActivo = criterioRaActivo || primerRAConCriterios();
+                ponderacionUnidadActiva = ponderacionUnidadActiva || primeraUnidadPonderacion();
+                ponderacionRaActiva = ponderacionRaActiva || primerRAConCriterios();
+                mostrarTablaRRAA();
+                mostrarTablaCriterios();
+                mostrarTablaPonderacionesUnidad();
+                actualizarStatsRRAA();
+                actualizarStatsCriterios();
+                actualizarOpcionesRA();
+                actualizarOpcionesPonderacion();
+                actualizarVistaActiva();
+                await actualizarMarcaArchivo();
+                document.getElementById('uploadArea').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                if (!options.silent) {
+                    const accion = options.refresh ? 'Datos actualizados desde Excel' : (options.auto ? 'Archivo activo cargado' : 'Archivo conectado');
+                    mostrarMensaje(`${accion}: ${result.fileName}`, 'success');
+                    mostrarLoading(false);
+                }
+            } catch (error) {
+                if (!options.silent) {
+                    mostrarMensaje('Error al abrir RRAA/CE: ' + error.message, 'error');
+                    mostrarLoading(false);
+                }
+            }
+        }
+
+        function actualizarVistaActiva() {
+            if (document.getElementById('tab-rraa')?.classList.contains('active')) {
+                mostrarTablaRRAA();
+            }
+            if (document.getElementById('tab-criterios')?.classList.contains('active')) {
+                mostrarTablaCriterios();
+            }
+            if (document.getElementById('tab-ponderaciones')?.classList.contains('active')) {
+                actualizarOpcionesPonderacion();
+                mostrarTablaPonderacionesUnidad();
+            }
+            if (document.getElementById('tab-resumen')?.classList.contains('active')) {
+                mostrarResumen();
+            }
+        }
+
+        async function actualizarMarcaArchivo() {
+            if (!isElectronMode || !window.electronExcel.getFileStatus) {
+                return null;
+            }
+
+            try {
+                const status = await window.electronExcel.getFileStatus();
+                archivoModificadoUnix = Number(status && status.modifiedAtUnix) || archivoModificadoUnix || 0;
+                return status;
+            } catch (_error) {
+                return null;
+            }
+        }
+
+        async function refrescarDesdeExcel(options = {}) {
+            if (!isElectronMode) {
+                mostrarMensaje('Para refrescar un archivo cargado en navegador, vuelve a seleccionarlo.', 'info');
+                return;
+            }
+
+            if (hayChangesSinGuardar) {
+                if (options.auto) {
+                    return;
+                }
+
+                const ok = window.appUx && window.appUx.confirm
+                    ? await window.appUx.confirm('Hay cambios sin guardar en esta pantalla. Si actualizas desde Excel se descartarán esos cambios locales.', {
+                        title: 'Actualizar desde Excel',
+                        confirmText: 'Actualizar'
+                    })
+                    : confirm('Hay cambios sin guardar en esta pantalla. Si actualizas desde Excel se descartarán esos cambios locales.\n\n¿Actualizar desde Excel?');
+                if (!ok) return;
+                hayChangesSinGuardar = false;
+                document.title = _BASE_TITLE;
+                if (autoSaveTimeout) {
+                    clearTimeout(autoSaveTimeout);
+                    autoSaveTimeout = null;
+                }
+            }
+
+            await seleccionarArchivoLocal({ refresh: true, silent: Boolean(options.silent), auto: Boolean(options.auto) });
+        }
+
+        async function comprobarActualizacionExterna() {
+            if (!isElectronMode || !archivoOriginal || hayChangesSinGuardar || comprobandoActualizacion) {
+                return;
+            }
+
+            comprobandoActualizacion = true;
+            try {
+                const status = await window.electronExcel.getFileStatus();
+                const modified = Number(status && status.modifiedAtUnix) || 0;
+                if (archivoModificadoUnix && modified > archivoModificadoUnix) {
+                    mostrarMensaje('El Excel ha cambiado fuera de la pantalla. Actualizando datos...', 'info');
+                    await refrescarDesdeExcel({ auto: true, silent: true });
+                    mostrarMensaje('Datos actualizados desde Excel.', 'success');
+                } else if (!archivoModificadoUnix) {
+                    archivoModificadoUnix = modified;
+                }
+            } catch (_error) {
+                // Si no se puede comprobar el estado, se mantiene la carga actual.
+            } finally {
+                comprobandoActualizacion = false;
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0 && xlsxReady) {
+                // Si ya hay datos cargados, es una importación; si no, es una carga inicial
+                if (document.getElementById('mainContent').style.display === 'block') {
+                    importarDesdeArchivo(e.target.files[0]);
+                } else {
+                    cargarArchivo(e.target.files[0]);
+                }
+            }
+            // Limpiar el input para permitir seleccionar el mismo archivo otra vez
+            e.target.value = '';
+        });
+
+        // ===== CARGAR ARCHIVO =====
+        function cargarArchivo(file) {
+            if (!checkXLSX()) {
+                mostrarMensaje('❌ XLSX no está disponible. Recargando...', 'error');
+                setTimeout(() => location.reload(), 2000);
+                return;
+            }
+
+            archivoOriginal = file;
+            mostrarLoading(true);
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: 'array' });
+
+                    // Verificar que tenga las hojas necesarias
+                    if (!workbook.SheetNames.includes('DATOS') || !workbook.SheetNames.includes('PESOS')) {
+                        mostrarMensaje('❌ El archivo debe tener las hojas DATOS y PESOS', 'error');
+                        mostrarLoading(false);
+                        return;
+                    }
+
+                    cargarRRAA();
+                    cargarCriterios();
+                    cargarPonderacionesUnidad();
+                    cargarPesosRA();
+                    mostrarMensaje('✅ Archivo cargado exitosamente', 'success');
+                    document.getElementById('uploadArea').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                    mostrarLoading(false);
+
+                } catch (error) {
+                    mostrarMensaje('❌ Error: ' + error.message, 'error');
+                    mostrarLoading(false);
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ===== CARGAR RRAA DESDE HOJA DATOS =====
+        function cargarRRAA() {
+            const sheet = workbook.Sheets['DATOS'];
+            const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            // Buscar la fila con encabezados (Nº, RRAA, Nº HOJA, etc.)
+            let headerRowIdx = -1;
+            let raaaStart = -1;
+
+            for (let i = 0; i < json.length; i++) {
+                const row = json[i];
+                if (row[1] && String(row[1]).toUpperCase().includes('RRAA')) {
+                    headerRowIdx = i;
+                    raaaStart = i + 1;
+                    break;
+                }
+            }
+
+            if (headerRowIdx === -1) {
+                mostrarMensaje('⚠️ No se encontró la sección de RRAA', 'error');
+                return;
+            }
+
+            // Extraer RRAA
+            const rraa = [];
+            for (let i = raaaStart; i < json.length; i++) {
+                const numero = json[i][0];
+                const descripcion = json[i][1];
+
+                if (!numero || !descripcion || String(descripcion).trim() === '') {
+                    break;
+                }
+
+                rraa.push({
+                    numero: numero,
+                    descripcion: descripcion
+                });
+            }
+
+            raaaActuales = rraa;
+            mostrarTablaRRAA();
+            actualizarStatsRRAA();
+            actualizarOpcionesRA();
+        }
+
+        // ===== CARGAR CRITERIOS DESDE HOJA PESOS =====
+        function cargarCriterios() {
+            const sheet = workbook.Sheets['PESOS'];
+            const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            const datosRows = XLSX.utils.sheet_to_json(workbook.Sheets['DATOS'], { header: 1 });
+            const textos = extraerTextosCriterios(datosRows);
+
+            const criterios = [];
+            const headerCriterios = json[3] || [];
+            const ponderaciones = json[21] || [];
+
+            for (let colIdx = 0; colIdx < headerCriterios.length; colIdx++) {
+                const codigo = headerCriterios[colIdx];
+
+                if (esCodigoCriterio(codigo)) {
+                    const raNumero = numeroRaDesdeCriterio(codigo);
+                    const rraa = raaaActuales.find(item => Number(item.numero) === raNumero);
+                    criterios.push({
+                        numero: criterios.length + 1,
+                        codigo: String(codigo),
+                        nombre: String(codigo),
+                        originalCodigo: String(codigo),
+                        raNumero,
+                        raDescripcion: rraa ? rraa.descripcion : '',
+                        ponderacion: ponderaciones[colIdx] || 0,
+                        ponderacionInstituto: ponderaciones[colIdx + 1] || 0,
+                        ponderacionEmpresa: ponderaciones[colIdx + 2] || 0,
+                        texto: textos[normalizarCodigoCriterio(codigo)] || '',
+                        colIdx
+                    });
+                }
+            }
+
+            criteriosActuales = criterios;
+            criterioRaActivo = criterioRaActivo || primerRAConCriterios();
+            mostrarTablaCriterios();
+            actualizarStatsCriterios();
+            actualizarOpcionesRA();
+        }
+
+        function cargarPonderacionesUnidad() {
+            const sheet = workbook.Sheets['PESOS'];
+            const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            ponderacionesUnidad = [];
+            for (let rowIdx = 5; rowIdx < 21; rowIdx++) {
+                const row = json[rowIdx] || [];
+                const ponderaciones = {};
+                criteriosActuales.forEach((criterio) => {
+                    ponderaciones[criterio.colIdx] = {
+                        ponderacion: row[criterio.colIdx] || 0,
+                        ponderacionInstituto: row[criterio.colIdx + 1] || 0,
+                        ponderacionEmpresa: row[criterio.colIdx + 2] || 0
+                    };
+                });
+
+                ponderacionesUnidad.push({
+                    numero: rowIdx - 4,
+                    rowIdx,
+                    nombre: row[0] && String(row[0]) !== '0' ? String(row[0]) : '',
+                    ponderaciones
+                });
+            }
+
+            ponderacionUnidadActiva = ponderacionUnidadActiva || primeraUnidadPonderacion();
+            ponderacionRaActiva = ponderacionRaActiva || primerRAConCriterios();
+            actualizarOpcionesPonderacion();
+            mostrarTablaPonderacionesUnidad();
+        }
+
+        function cargarPesosRA() {
+            if (!workbook || !workbook.Sheets['PESOS']) {
+                raPesos = normalizarRaPesos([]);
+                return;
+            }
+
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets['PESOS'], { header: 1, defval: null });
+            raPesos = normalizarRaPesos(listaRANumeros().map((raNumero) => {
+                const cols = criteriosActuales
+                    .filter((crit) => Number(crit.raNumero) === Number(raNumero))
+                    .map((crit) => Number(crit.colIdx))
+                    .filter((colIdx) => Number.isInteger(colIdx) && colIdx >= 0)
+                    .sort((a, b) => a - b);
+                const start = cols.length ? cols[0] : columnaInicioRA(raNumero);
+                const end = (cols.length ? cols[cols.length - 1] : start) + 2;
+                const scanCols = Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+                const inst = primerNumeroEnColumnas(rows, 24, scanCols);
+                const emp = primerNumeroEnColumnas(rows, 25, scanCols);
+                const rraa = raaaActuales.find((item) => Number(item.numero) === Number(raNumero));
+
+                return {
+                    raNumero,
+                    raDescripcion: rraa ? rraa.descripcion : '',
+                    instituto: inst ? inst.value : 0,
+                    empresa: emp ? emp.value : 0,
+                    colIdx: (inst && inst.colIdx) || (emp && emp.colIdx) || primeraColumnaCriterioRA(raNumero)
+                };
+            }));
+        }
+
+        // ===== MOSTRAR TABLA RRAA =====
+        function mostrarTablaRRAA() {
+            const tbody = document.getElementById('rraaTableBody');
+            const emptyState = document.getElementById('emptyStateRRAA');
+
+            if (raaaActuales.length === 0) {
+                document.getElementById('rraaTable').style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('rraaTable').style.display = 'table';
+            emptyState.style.display = 'none';
+
+            raPesos = normalizarRaPesos(raPesos);
+            const totalModulo = criteriosActuales.reduce((s, c) => s + (Number(c.ponderacion) || 0), 0);
+
+            tbody.innerHTML = raaaActuales.map((rraa, idx) => {
+                const raNum = Number(rraa.numero);
+                const peso = raPesos.find(p => Number(p.raNumero) === raNum) || { instituto: 0, empresa: 0 };
+                const instPct = valorPctInput(peso.instituto);
+                const empPct = valorPctInput(peso.empresa);
+                const suma = Math.round((instPct + empPct) * 10) / 10;
+                const sumaOk = Math.abs(suma - 100) <= 0.5;
+                const totalRA = criteriosActuales
+                    .filter(c => Number(c.raNumero) === raNum)
+                    .reduce((s, c) => s + (Number(c.ponderacion) || 0), 0);
+                const finalPct = totalModulo > 0 ? Math.round(totalRA / totalModulo * 1000) / 10 : 0;
+                return `<tr>
+                    <td class="row-numero">${rraa.numero}</td>
+                    <td>${rraa.descripcion}</td>
+                    <td style="text-align:center;font-weight:700;color:#1e40af">${finalPct}%</td>
+                    <td style="text-align:center"><input type="number" min="0" max="100" step="1" value="${instPct}" aria-label="Porcentaje instituto RA ${raNum}" style="width:68px;padding:5px 6px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;text-align:center" onchange="actualizarPesoRA(${raNum}, 'instituto', this.value)" /></td>
+                    <td style="text-align:center"><input type="number" min="0" max="100" step="1" value="${empPct}" aria-label="Porcentaje empresa RA ${raNum}" style="width:68px;padding:5px 6px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;text-align:center" onchange="actualizarPesoRA(${raNum}, 'empresa', this.value)" /></td>
+                    <td style="text-align:center">
+                        <button class="delete" type="button" title="Eliminar RA" aria-label="Eliminar RA ${raNum}" onclick="eliminarRRAA(${idx})">🗑️</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ===== MOSTRAR TABLA CRITERIOS =====
+        function mostrarTablaCriterios() {
+            const tbody = document.getElementById('criteriosTableBody');
+            const emptyState = document.getElementById('emptyStateCriterios');
+            const criteriosVisibles = criteriosActuales.filter((crit) =>
+                coincideRaActiva(crit, criterioRaActivo) &&
+                criterioTieneDatos(crit) &&
+                criterioCoincideBusqueda(crit)
+            );
+
+            if (criteriosVisibles.length === 0) {
+                document.getElementById('criteriosTable').style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('criteriosTable').style.display = 'table';
+            emptyState.style.display = 'none';
+
+            tbody.innerHTML = criteriosVisibles.map((crit, visibleIdx) => {
+                const idx = criteriosActuales.indexOf(crit);
+                const showHeader = debeMostrarCabeceraRA(criteriosVisibles, visibleIdx, criterioRaActivo);
+                const header = showHeader ? filaCabeceraRA(crit.raNumero, 8, criteriosVisibles, 'crit') : '';
+                const colapsable = criterioRaActivo === ALL_RA_VALUE;
+                return `
+                ${header}
+                <tr${colapsable ? ` class="ra-rows-crit-${crit.raNumero}" style="display:none"` : ''}>
+                    <td class="row-numero">${crit.numero}</td>
+                    <td>
+                        <select aria-label="RA del criterio ${escaparHtml(crit.codigo || crit.nombre || idx + 1)}" onchange="actualizarCriterioRA(${idx}, this.value)">
+                            ${opcionesRA(crit.raNumero)}
+                        </select>
+                    </td>
+                    <td><input class="codigo-input" type="text" value="${escaparHtml(crit.codigo || crit.nombre)}" maxlength="6" onchange="actualizarCriterioCampo(${idx}, 'codigo', this.value)" title="${escaparHtml(crit.raDescripcion || '')}" /></td>
+                    <td><textarea aria-label="Texto del criterio ${escaparHtml(crit.codigo || crit.nombre || idx + 1)}" onchange="actualizarCriterioCampo(${idx}, 'texto', this.value)">${escaparHtml(crit.texto || '')}</textarea></td>
+                    <td style="text-align:center;font-weight:600;color:#374151">${valorPctInput(crit.ponderacion || 0)}%</td>
+                    <td style="text-align:center;color:#1e40af">${valorPctInput(crit.ponderacionInstituto || 0)}%</td>
+                    <td style="text-align:center;color:#065f46">${valorPctInput(crit.ponderacionEmpresa || 0)}%</td>
+                    <td>
+                        <button class="delete" type="button" title="Eliminar criterio" aria-label="Eliminar criterio ${escaparHtml(crit.codigo || crit.nombre || idx + 1)}" onclick="eliminarCriterio(${idx})">🗑️</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function mostrarTablaPonderacionesUnidad() {
+            const tbody = document.getElementById('ponderacionesTableBody');
+            const thead = document.getElementById('ponderacionesTableHead');
+            if (!tbody || !thead) return;
+
+            // Unidades con nombre (columnas)
+            const unidades = ponderacionesUnidad.filter(u => u.nombre);
+            if (!unidades.length) { tbody.innerHTML = ''; thead.innerHTML = ''; return; }
+
+            // CE visibles (filas)
+            const criteriosVisibles = criteriosActuales.filter((crit) =>
+                coincideRaActiva(crit, ponderacionRaActiva) &&
+                criterioTieneDatos(crit) &&
+                criterioCoincideBusqueda(crit)
+            );
+
+            if (criteriosVisibles.length === 0) {
+                thead.innerHTML = '';
+                tbody.innerHTML = `<tr><td colspan="${2 + unidades.length}" style="text-align:center;color:#6b7280;padding:18px;">No hay criterios para mostrar.</td></tr>`;
+                return;
+            }
+
+            // Cabecera: código | descripción (truncada) | U1 | U2 | ...
+            thead.innerHTML = '<tr style="background:#6366f1;color:white">' +
+                '<th style="padding:7px 6px;text-align:left;position:sticky;left:0;z-index:3;background:#6366f1;min-width:44px">Código</th>' +
+                '<th style="padding:7px 10px;text-align:left;position:sticky;left:44px;z-index:3;background:#6366f1;min-width:220px;max-width:350px">Criterio de Evaluación</th>' +
+                '<th style="padding:7px 4px;text-align:center;min-width:34px;font-size:0.78em" title="¿Este CE se evalúa en Empresa (FCT)?">Emp.</th>' +
+                unidades.map(u =>
+                    `<th style="padding:7px 6px;text-align:center;min-width:52px;font-size:0.8em" title="${escaparHtml(u.nombre)}">U${u.numero}</th>`
+                ).join('') +
+                '</tr>';
+
+            // Filas por CE, con cabecera de RA cuando cambia
+            let html = '';
+            criteriosVisibles.forEach((crit, visibleIdx) => {
+                const critIdx = criteriosActuales.indexOf(crit);
+                const showHeader = debeMostrarCabeceraRA(criteriosVisibles, visibleIdx, ponderacionRaActiva);
+                if (showHeader) {
+                    const rraaItem = raaaActuales.find(r => Number(r.numero) === Number(crit.raNumero));
+                    const desc = rraaItem ? rraaItem.descripcion : '';
+                    const total = criteriosVisibles.filter(c => Number(c.raNumero) === Number(crit.raNumero)).length;
+                    html += `<tr style="background:#eef2ff"><td colspan="${3 + unidades.length}" style="padding:6px 10px;font-weight:800;color:#312e81;font-size:0.88em;border-top:2px solid #c7d2fe">RA ${crit.raNumero}${desc ? ' — ' + escaparHtml(desc) : ''} <span style="color:#6b7280;font-weight:600">${total} CE</span></td></tr>`;
+                }
+                const textoCort = (crit.texto || crit.codigo || '').substring(0, 80) + ((crit.texto || '').length > 80 ? '…' : '');
+                const celdas = unidades.map(u => {
+                    const vals = u.ponderaciones[crit.colIdx] || { ponderacion: 0, ponderacionInstituto: 0, ponderacionEmpresa: 0 };
+                    const v = valorPctInput(vals.ponderacion);
+                    const inst = valorPctInput(vals.ponderacionInstituto);
+                    const emp = valorPctInput(vals.ponderacionEmpresa);
+                    const esZero = !v;
+                    return `<td style="text-align:center;padding:3px 4px;border-bottom:1px solid #f0f0f0;vertical-align:middle">` +
+                        `<input type="number" value="${esZero ? '' : v}" placeholder="0" min="0" max="100" step="0.5" ` +
+                        `style="width:48px;padding:4px 3px;border:1px solid ${esZero ? '#e5e7eb' : '#a5b4fc'};border-radius:3px;font-size:0.82em;text-align:center;background:${esZero ? '#fafafa' : 'white'};color:${esZero ? '#9ca3af' : '#1e1b4b'}" ` +
+                        `onchange="actualizarPonderacionUnidad(${u.rowIdx},${crit.colIdx},'ponderacion',this.value)" />` +
+                        (esZero ? '' : `<div style="font-size:0.68em;color:#6b7280;line-height:1.2;margin-top:2px"><span style="color:#1e40af">${inst}%</span> / <span style="color:#065f46">${emp}%</span></div>`) +
+                        `</td>`;
+                }).join('');
+                const checkEmp = `<td style="text-align:center;padding:3px 4px;border-bottom:1px solid #f0f0f0">` +
+                    `<input type="checkbox" ${crit.empresaFlag ? 'checked' : ''} title="Evaluado en Empresa (FCT)" ` +
+                    `style="width:16px;height:16px;cursor:pointer;accent-color:#6366f1" ` +
+                    `onchange="actualizarEmpresaFlag(${critIdx},this.checked)" /></td>`;
+                html += `<tr>` +
+                    `<td style="padding:4px 6px;font-weight:700;color:#4338ca;position:sticky;left:0;background:white;z-index:1;border-bottom:1px solid #f0f0f0;min-width:44px">${escaparHtml(crit.codigo || crit.nombre)}</td>` +
+                    `<td style="padding:4px 10px;color:#374151;font-size:0.82em;position:sticky;left:44px;background:white;z-index:1;border-bottom:1px solid #f0f0f0;min-width:220px;max-width:350px;overflow:hidden;text-overflow:ellipsis" title="${escaparHtml(crit.texto || '')}">${escaparHtml(textoCort)}</td>` +
+                    checkEmp +
+                    celdas +
+                    `</tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function criterioTieneDatos(crit) {
+            return String(crit.texto || "").trim() !== "" ||
+                Number(crit.ponderacion) !== 0 ||
+                Number(crit.ponderacionInstituto) !== 0 ||
+                Number(crit.ponderacionEmpresa) !== 0;
+        }
+
+        function coincideRaActiva(crit, filtroRa) {
+            return filtroRa === ALL_RA_VALUE || filtroRa === null || filtroRa === '' ||
+                Number(crit.raNumero) === Number(filtroRa);
+        }
+
+        function debeMostrarCabeceraRA(lista, idx, filtroRa) {
+            return filtroRa === ALL_RA_VALUE &&
+                (idx === 0 || Number(lista[idx - 1].raNumero) !== Number(lista[idx].raNumero));
+        }
+
+        function filaCabeceraRA(raNumero, colspan, lista, rowIdx) {
+            const rraa = raaaActuales.find((item) => Number(item.numero) === Number(raNumero));
+            const descripcion = rraa && rraa.descripcion ? ` - ${rraa.descripcion}` : '';
+            const total = lista.filter((crit) => Number(crit.raNumero) === Number(raNumero)).length;
+            const toggleAttr = rowIdx !== undefined
+                ? `onclick="toggleRaRows('${rowIdx}', ${raNumero}, this)" style="cursor:pointer;" title="Click para colapsar/expandir"`
+                : '';
+            return `<tr class="ra-inline-header">
+                <td colspan="${colspan}" ${toggleAttr}>RA ${raNumero}${escaparHtml(descripcion)} <span class="ra-inline-count">${total} CE</span><span class="ra-toggle-icon" style="float:right;font-size:0.8em;color:#6366f1;">▶</span></td>
+            </tr>`;
+        }
+
+        function criterioCoincideBusqueda(crit) {
+            if (!criterioBusqueda) return true;
+            const texto = normalizarBusqueda([
+                crit.codigo,
+                crit.nombre,
+                crit.texto,
+                crit.raDescripcion,
+                `RA ${crit.raNumero}`
+            ].join(' '));
+            return texto.includes(criterioBusqueda);
+        }
+
+        // ===== ACTUALIZAR ESTADÍSTICAS =====
+        function actualizarStatsRRAA() {
+            document.getElementById('totalRRAA').textContent = raaaActuales.length;
+        }
+
+        function actualizarStatsCriterios() {
+            document.getElementById('totalCriterios').textContent = criteriosActuales.length;
+        }
+
+        function actualizarOpcionesRA() {
+            const select = document.getElementById('nuevoCriterioRA');
+            if (!select) {
+                return;
+            }
+
+            select.innerHTML = listaRANumeros().map((raNumero) => `
+                <option value="${raNumero}">RA ${raNumero}</option>
+            `).join('');
+
+            actualizarFiltroRA();
+        }
+
+        function opcionesRA(raNumero) {
+            return listaRANumeros().map((numero) => `
+                <option value="${numero}" ${Number(numero) === Number(raNumero) ? 'selected' : ''}>RA ${numero}</option>
+            `).join('');
+        }
+
+        function listaRANumeros() {
+            const numeros = new Set();
+            raaaActuales.forEach((rraa) => numeros.add(Number(rraa.numero)));
+            criteriosActuales.forEach((criterio) => numeros.add(Number(criterio.raNumero)));
+            return Array.from(numeros).filter(Boolean).sort((a, b) => a - b);
+        }
+
+        function columnaInicioRA(raNumero) {
+            return 2 + Math.max(0, Number(raNumero || 1) - 1) * 40;
+        }
+
+        function primeraColumnaCriterioRA(raNumero) {
+            const cols = criteriosActuales
+                .filter((crit) => Number(crit.raNumero) === Number(raNumero))
+                .map((crit) => Number(crit.colIdx))
+                .filter((colIdx) => Number.isInteger(colIdx) && colIdx >= 0)
+                .sort((a, b) => a - b);
+            return cols.length ? cols[0] : columnaInicioRA(raNumero);
+        }
+
+        function primerNumeroEnColumnas(rows, rowIdx, cols) {
+            const row = rows[rowIdx] || [];
+            for (const colIdx of cols) {
+                const raw = row[colIdx];
+                if (raw !== null && raw !== undefined && raw !== '') {
+                    const value = parseFloat(String(raw).replace(',', '.'));
+                    if (!Number.isNaN(value)) {
+                        return { colIdx, value };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function normalizarRaPesos(items = []) {
+            const existentes = new Map();
+            items.forEach((item) => {
+                const raNumero = Number(item.raNumero);
+                if (!raNumero) return;
+                const colIdx = item.colIdx !== null && item.colIdx !== undefined && Number.isInteger(Number(item.colIdx))
+                    ? Number(item.colIdx)
+                    : primeraColumnaCriterioRA(raNumero);
+                existentes.set(raNumero, {
+                    raNumero,
+                    raDescripcion: item.raDescripcion || '',
+                    instituto: parseFloat(String(item.instituto || 0).replace(',', '.')) || 0,
+                    empresa: parseFloat(String(item.empresa || 0).replace(',', '.')) || 0,
+                    colIdx
+                });
+            });
+
+            listaRANumeros().forEach((raNumero) => {
+                if (!existentes.has(raNumero)) {
+                    const rraa = raaaActuales.find((item) => Number(item.numero) === Number(raNumero));
+                    existentes.set(raNumero, {
+                        raNumero,
+                        raDescripcion: rraa ? rraa.descripcion : '',
+                        instituto: 0,
+                        empresa: 0,
+                        colIdx: primeraColumnaCriterioRA(raNumero)
+                    });
+                }
+            });
+
+            return Array.from(existentes.values())
+                .map((item) => ({
+                    ...item,
+                    total: sumarPonderaciones(item.instituto, item.empresa)
+                }))
+                .sort((a, b) => Number(a.raNumero) - Number(b.raNumero));
+        }
+
+        function mostrarPesosRACriterios() {
+            const el = document.getElementById('raInstEmpresaPanel');
+            if (!el) return;
+
+            raPesos = normalizarRaPesos(raPesos);
+            const pesos = raPesos.filter(p => Number(p.raNumero));
+            if (!pesos.length) { el.innerHTML = ''; return; }
+
+            // Calcular % final por RA: suma de ponderaciones de sus CE / total módulo
+            const totalModulo = criteriosActuales.reduce((s, c) => s + (Number(c.ponderacion) || 0), 0);
+            function pctFinalRA(raNum) {
+                const total = criteriosActuales
+                    .filter(c => Number(c.raNumero) === Number(raNum))
+                    .reduce((s, c) => s + (Number(c.ponderacion) || 0), 0);
+                return totalModulo > 0 ? Math.round(total / totalModulo * 1000) / 10 : 0;
+            }
+
+            const filas = pesos.map(peso => {
+                const instPct = valorPctInput(peso.instituto);
+                const empPct = valorPctInput(peso.empresa);
+                const totalDistrib = Math.round((instPct + empPct) * 10) / 10;
+                const distribOk = Math.abs(totalDistrib - 100) <= 0.5;
+                const distribColor = distribOk ? '#065f46' : '#b91c1c';
+                const finalPct = pctFinalRA(peso.raNumero);
+                const rraaItem = raaaActuales.find(r => Number(r.numero) === Number(peso.raNumero));
+                const desc = rraaItem ? rraaItem.descripcion : '';
+                return '<tr>' +
+                    '<td style="font-weight:700;color:#3730a3;white-space:nowrap">RA ' + peso.raNumero + '</td>' +
+                    '<td style="font-size:0.88em;color:#374151">' + (desc ? desc.substring(0, 80) + (desc.length > 80 ? '…' : '') : '—') + '</td>' +
+                    '<td style="text-align:center;font-weight:700;color:#1e40af">' + finalPct + '%</td>' +
+                    '<td style="text-align:center"><input type="number" min="0" max="100" step="1" value="' + instPct + '" aria-label="Porcentaje instituto RA ' + peso.raNumero + '" style="width:70px;padding:5px 6px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;text-align:center" onchange="actualizarPesoRA(' + peso.raNumero + ', \'instituto\', this.value)" /></td>' +
+                    '<td style="text-align:center"><input type="number" min="0" max="100" step="1" value="' + empPct + '" aria-label="Porcentaje empresa RA ' + peso.raNumero + '" style="width:70px;padding:5px 6px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;text-align:center" onchange="actualizarPesoRA(' + peso.raNumero + ', \'empresa\', this.value)" /></td>' +
+                    '<td style="text-align:center;font-weight:700;color:' + distribColor + '">' + totalDistrib + '%</td>' +
+                    '</tr>';
+            }).join('');
+
+            el.innerHTML = '<div style="margin:18px 0;">' +
+                '<h3 style="color:#3730a3;font-size:1.05em;margin-bottom:6px;">Pesos por RA: % final y distribución Instituto / Empresa</h3>' +
+                '<p style="color:#6b7280;font-size:0.82em;margin:0 0 10px;">% Final = peso del RA en la nota del módulo. % Instituto + % Empresa deben sumar 100%.</p>' +
+                '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.9em" class="ux-table">' +
+                '<thead><tr style="background:#6366f1;color:white">' +
+                '<th style="padding:8px 10px;text-align:left">RA</th>' +
+                '<th style="padding:8px 10px;text-align:left">Resultado de Aprendizaje</th>' +
+                '<th style="padding:8px 10px;text-align:center">% Final</th>' +
+                '<th style="padding:8px 10px;text-align:center">% Instituto</th>' +
+                '<th style="padding:8px 10px;text-align:center">% Empresa</th>' +
+                '<th style="padding:8px 10px;text-align:center">Suma Inst+Emp</th>' +
+                '</tr></thead>' +
+                '<tbody>' + filas + '</tbody>' +
+                '</table></div></div>';
+        }
+
+        function pesoRA(raNumero) {
+            raPesos = normalizarRaPesos(raPesos);
+            return raPesos.find((item) => Number(item.raNumero) === Number(raNumero)) || {
+                raNumero,
+                instituto: 0,
+                empresa: 0,
+                total: 0,
+                colIdx: primeraColumnaCriterioRA(raNumero)
+            };
+        }
+
+        function valorPctInput(value) {
+            return Number(((Number(value) || 0) * 100).toFixed(2));
+        }
+
+        function parsePorcentajeInput(value) {
+            const number = parseFloat(String(value).replace(',', '.')) || 0;
+            return Number((number / 100).toFixed(6));
+        }
+
+        function actualizarCriterioRA(idx, value) {
+            const raNumero = Number(value);
+            const rraa = raaaActuales.find(item => Number(item.numero) === raNumero);
+            criteriosActuales[idx].raNumero = raNumero;
+            criteriosActuales[idx].raDescripcion = rraa ? rraa.descripcion : '';
+            criteriosActuales[idx].colIdx = null;
+            if (criterioRaActivo !== ALL_RA_VALUE) {
+                criterioRaActivo = raNumero;
+            }
+            marcarCambio();
+            actualizarFiltroRA();
+            mostrarTablaCriterios();
+        }
+
+        function actualizarCriterioCampo(idx, campo, value) {
+            if (!criteriosActuales[idx]) {
+                return;
+            }
+
+            if (campo === 'codigo') {
+                criteriosActuales[idx].codigo = value;
+                criteriosActuales[idx].nombre = value;
+                const raNumero = numeroRaDesdeCriterio(value);
+                if (raNumero) {
+                    const rraa = raaaActuales.find(item => Number(item.numero) === raNumero);
+                    criteriosActuales[idx].raNumero = raNumero;
+                    criteriosActuales[idx].raDescripcion = rraa ? rraa.descripcion : '';
+                }
+            } else {
+                criteriosActuales[idx][campo] = value;
+            }
+
+            marcarCambio();
+        }
+
+        function actualizarPonderacionCriterio(idx, campo, value) {
+            criteriosActuales[idx][campo] = parseFloat(value) || 0;
+            criteriosActuales[idx].ponderacion = sumarPonderaciones(
+                criteriosActuales[idx].ponderacionInstituto,
+                criteriosActuales[idx].ponderacionEmpresa
+            );
+            marcarCambio();
+            mostrarTablaCriterios();
+        }
+
+        function sumarPonderaciones(instituto, empresa) {
+            return Number(((parseFloat(instituto) || 0) + (parseFloat(empresa) || 0)).toFixed(6));
+        }
+
+        function actualizarNuevaPonderacionFinal() {
+            const instituto = document.getElementById('nuevoPonderacionInstituto').value;
+            const empresa = document.getElementById('nuevoPonderacionEmpresa').value;
+            document.getElementById('nuevoPonderacion').value = sumarPonderaciones(instituto, empresa);
+        }
+
+        function actualizarOpcionesPonderacion() {
+            const unidadSelect = document.getElementById('unidadPonderacionSelect');
+            const raSelect = document.getElementById('ponderacionRaFiltro');
+            if (!unidadSelect || !raSelect) {
+                return;
+            }
+
+            const unidades = ponderacionesUnidad.filter((unidad) => unidad.nombre);
+            if (!ponderacionUnidadActiva && unidades.length > 0) {
+                ponderacionUnidadActiva = unidades[0].rowIdx;
+            }
+            if (!ponderacionRaActiva) {
+                ponderacionRaActiva = ALL_RA_VALUE;
+            }
+
+            unidadSelect.innerHTML = unidades.map((unidad) => `
+                <option value="${unidad.rowIdx}" ${Number(unidad.rowIdx) === Number(ponderacionUnidadActiva) ? 'selected' : ''}>U${unidad.numero} - ${escaparHtml(unidad.nombre)}</option>
+            `).join('');
+            raSelect.innerHTML = `<option value="${ALL_RA_VALUE}" ${ponderacionRaActiva === ALL_RA_VALUE ? 'selected' : ''}>Todos los RA</option>` +
+            listaRANumeros().map((raNumero) => {
+                const rraa = raaaActuales.find(item => Number(item.numero) === Number(raNumero));
+                const nombre = rraa && rraa.descripcion ? ` - ${rraa.descripcion}` : '';
+                return `<option value="${raNumero}" ${Number(raNumero) === Number(ponderacionRaActiva) ? 'selected' : ''}>RA ${raNumero}${escaparHtml(nombre)}</option>`;
+            }).join('');
+        }
+
+        function seleccionarUnidadPonderacion(value) {
+            ponderacionUnidadActiva = Number(value);
+            mostrarTablaPonderacionesUnidad();
+        }
+
+        function seleccionarRAPonderacion(value) {
+            ponderacionRaActiva = value === ALL_RA_VALUE ? ALL_RA_VALUE : Number(value);
+            mostrarTablaPonderacionesUnidad();
+        }
+
+        function primeraUnidadPonderacion() {
+            const unidad = ponderacionesUnidad.find((item) => item.nombre);
+            return unidad ? unidad.rowIdx : null;
+        }
+
+        function toggleRaRows(rowIdx, raNumero, headerCell) {
+            const rows = document.querySelectorAll(`.ra-rows-${rowIdx}-${raNumero}`);
+            const icon = headerCell.querySelector('.ra-toggle-icon');
+            const collapsed = rows.length && rows[0].style.display === 'none';
+            rows.forEach(r => { r.style.display = collapsed ? '' : 'none'; });
+            if (icon) icon.textContent = collapsed ? '▼' : '▶';
+        }
+
+        function toggleResumenRA(raNum, headerRow) {
+            const rows = document.querySelectorAll(`.resumen-ra-${raNum}-row`);
+            const icon = headerRow.querySelector('span[style*="float:right"]');
+            const collapsed = rows.length && rows[0].style.display === 'none';
+            rows.forEach(r => { r.style.display = collapsed ? '' : 'none'; });
+            if (icon) icon.textContent = collapsed ? '▼' : '▶';
+        }
+
+        function actualizarEmpresaFlag(critIdx, checked) {
+            const crit = criteriosActuales[critIdx];
+            if (!crit) return;
+            crit.empresaFlag = checked;
+            ponderacionesUnidad.forEach(unidad => recalcularInstEmpresa(unidad, crit.colIdx));
+            marcarCambio();
+            mostrarTablaPonderacionesUnidad();
+        }
+
+        function recalcularInstEmpresa(unidad, colIdx) {
+            const vals = unidad.ponderaciones[colIdx];
+            if (!vals) return;
+            const crit = criteriosActuales.find(c => Number(c.colIdx) === Number(colIdx));
+            if (!crit) return;
+            const base = Number(vals.ponderacion) || 0;
+            if (crit.empresaFlag) {
+                const peso = pesoRA(crit.raNumero);
+                vals.ponderacionInstituto = Number((base * (Number(peso.instituto) || 0)).toFixed(6));
+                vals.ponderacionEmpresa = Number((base * (Number(peso.empresa) || 0)).toFixed(6));
+            } else {
+                // Sin empresa: 100% Instituto
+                vals.ponderacionInstituto = base;
+                vals.ponderacionEmpresa = 0;
+            }
+        }
+
+        function recalcularTodasInstEmpresa() {
+            // On load: only recalculate criteriosActuales totals from base weights.
+            // Do NOT touch ponderacionInstituto/Empresa — trust Excel values.
+            criteriosActuales.forEach((crit) => {
+                if (crit.colIdx === null || crit.colIdx === undefined) return;
+                let totalBase = 0, totalInst = 0, totalEmp = 0;
+                ponderacionesUnidad.forEach((unidad) => {
+                    const vals = unidad.ponderaciones[crit.colIdx];
+                    if (vals) {
+                        totalBase += Number(vals.ponderacion) || 0;
+                        totalInst += Number(vals.ponderacionInstituto) || 0;
+                        totalEmp += Number(vals.ponderacionEmpresa) || 0;
+                    }
+                });
+                crit.ponderacion = Number(totalBase.toFixed(6));
+                crit.ponderacionInstituto = Number(totalInst.toFixed(6));
+                crit.ponderacionEmpresa = Number(totalEmp.toFixed(6));
+            });
+        }
+
+        function actualizarPonderacionUnidad(rowIdx, colIdx, campo, value) {
+            const unidad = ponderacionesUnidad.find((item) => Number(item.rowIdx) === Number(rowIdx));
+            if (!unidad) {
+                return;
+            }
+
+            unidad.ponderaciones[colIdx] = unidad.ponderaciones[colIdx] || {
+                ponderacion: 0,
+                ponderacionInstituto: 0,
+                ponderacionEmpresa: 0
+            };
+            unidad.ponderaciones[colIdx][campo] = parsePorcentajeInput(value);
+            if (campo === 'ponderacion') {
+                recalcularInstEmpresa(unidad, colIdx);
+            }
+            marcarCambio();
+            mostrarTablaPonderacionesUnidad();
+        }
+
+        function actualizarPesoRA(raNumero, campo, value) {
+            raPesos = normalizarRaPesos(raPesos);
+            const peso = raPesos.find((item) => Number(item.raNumero) === Number(raNumero));
+            if (!peso || !['instituto', 'empresa'].includes(campo)) {
+                return;
+            }
+
+            peso[campo] = parsePorcentajeInput(value);
+            peso.total = sumarPonderaciones(peso.instituto, peso.empresa);
+
+            // Recalculate only CEs that have empresaFlag (CEs without it are always 100% Instituto)
+            const criteriosRA = criteriosActuales.filter(c => Number(c.raNumero) === Number(raNumero) && c.empresaFlag);
+            ponderacionesUnidad.forEach((unidad) => {
+                criteriosRA.forEach((crit) => recalcularInstEmpresa(unidad, crit.colIdx));
+            });
+
+            marcarCambio();
+            mostrarTablaRRAA();
+            mostrarTablaCriterios();
+            mostrarTablaPonderacionesUnidad();
+            mostrarResumen();
+        }
+
+        function actualizarFiltroRA() {
+            const filtro = document.getElementById('criterioRaFiltro');
+            if (!filtro) {
+                return;
+            }
+
+            const numeros = listaRANumeros();
+            if (!criterioRaActivo && numeros.length > 0) {
+                criterioRaActivo = ALL_RA_VALUE;
+            }
+
+            filtro.innerHTML = `<option value="${ALL_RA_VALUE}" ${criterioRaActivo === ALL_RA_VALUE ? 'selected' : ''}>Todos los RA</option>` +
+            numeros.map((raNumero) => {
+                const rraa = raaaActuales.find(item => Number(item.numero) === Number(raNumero));
+                const nombre = rraa && rraa.descripcion ? ` - ${rraa.descripcion}` : '';
+                return `<option value="${raNumero}" ${Number(raNumero) === Number(criterioRaActivo) ? 'selected' : ''}>RA ${raNumero}${escaparHtml(nombre)}</option>`;
+            }).join('');
+        }
+
+        function seleccionarRAFiltro(value) {
+            criterioRaActivo = value === ALL_RA_VALUE ? ALL_RA_VALUE : Number(value);
+            mostrarTablaCriterios();
+        }
+
+        function alternarMenuRA() {
+            const filtro = document.getElementById('criterioRaFiltro');
+            if (filtro) {
+                filtro.focus();
+            }
+        }
+
+        function primerRAConCriterios() {
+            const criterio = criteriosActuales.find((crit) => Number(crit.raNumero));
+            return criterio ? Number(criterio.raNumero) : null;
+        }
+
+        function esCodigoCriterio(value) {
+            return Boolean(value && /^\d+\.[a-z]\)/i.test(String(value).trim()));
+        }
+
+        function numeroRaDesdeCriterio(value) {
+            const match = String(value || '').match(/^(\d+)/);
+            return match ? Number(match[1]) : 0;
+        }
+
+        function normalizarCodigoCriterio(value) {
+            return String(value || '').trim().replace(/\)$/u, '').toLowerCase();
+        }
+
+        function normalizarBusqueda(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function extraerTextosCriterios(rows = null, sheet = null) {
+            if (!rows) {
+                if (!workbook || !workbook.Sheets['DATOS']) {
+                    return {};
+                }
+                rows = XLSX.utils.sheet_to_json(workbook.Sheets['DATOS'], { header: 1 });
+            }
+
+            const textos = {};
+
+            rows.forEach((row) => {
+                const codigo = row && row[21];
+                const texto = row && row[22];
+
+                if (codigo && texto) {
+                    textos[normalizarCodigoCriterio(codigo)] = String(texto).trim();
+                }
+            });
+
+            return textos;
+        }
+
+        function escaparHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ===== AGREGAR RRAA =====
+        function agregarRRAA() {
+            const descripcion = document.getElementById('nuevoRRAA').value.trim();
+
+            if (!descripcion) {
+                mostrarMensaje('❌ Por favor ingresa la descripción del RRAA', 'error');
+                return;
+            }
+
+            const numeroSiguiente = raaaActuales.length + 1;
+            raaaActuales.push({
+                numero: numeroSiguiente,
+                descripcion: descripcion
+            });
+
+            mostrarTablaRRAA();
+            actualizarStatsRRAA();
+            document.getElementById('nuevoRRAA').value = '';
+            marcarCambio();
+            mostrarMensaje('✅ RRAA agregado', 'success');
+        }
+
+        // ===== AGREGAR CRITERIO =====
+        function agregarCriterio() {
+            const raNumero = Number(document.getElementById('nuevoCriterioRA').value);
+            const codigo = document.getElementById('nuevoCriterio').value.trim();
+            const texto = document.getElementById('nuevoCriterioTexto').value.trim();
+            const ponderacion = parseFloat(document.getElementById('nuevoPonderacion').value);
+            const ponderacionInstituto = parseFloat(document.getElementById('nuevoPonderacionInstituto').value) || 0;
+            const ponderacionEmpresa = parseFloat(document.getElementById('nuevoPonderacionEmpresa').value) || 0;
+            const ponderacionFinal = sumarPonderaciones(ponderacionInstituto, ponderacionEmpresa);
+
+            if (!raNumero || !codigo) {
+                mostrarMensaje('❌ Completa todos los campos', 'error');
+                return;
+            }
+
+            const rraa = raaaActuales.find(item => Number(item.numero) === raNumero);
+
+            criteriosActuales.push({
+                numero: criteriosActuales.length + 1,
+                codigo,
+                nombre: codigo,
+                texto,
+                raNumero,
+                raDescripcion: rraa ? rraa.descripcion : '',
+                originalCodigo: codigo,
+                ponderacion: ponderacionFinal || ponderacion || 0,
+                ponderacionInstituto,
+                ponderacionEmpresa,
+                colIdx: null
+            });
+
+            mostrarTablaCriterios();
+            actualizarStatsCriterios();
+            document.getElementById('nuevoCriterio').value = '';
+            document.getElementById('nuevoCriterioTexto').value = '';
+            document.getElementById('nuevoPonderacion').value = '';
+            document.getElementById('nuevoPonderacionInstituto').value = '';
+            document.getElementById('nuevoPonderacionEmpresa').value = '';
+            marcarCambio();
+            mostrarMensaje('✅ Criterio agregado', 'success');
+        }
+
+        // ===== ELIMINAR RRAA =====
+        async function eliminarRRAA(idx) {
+            const desc = raaaActuales[idx].descripcion.substring(0, 50);
+            const ok = window.appUx && window.appUx.confirm
+                ? await window.appUx.confirm(`¿Eliminar este RRAA?\n"${desc}..."`, {
+                    title: "Eliminar RRAA",
+                    confirmText: "Eliminar"
+                })
+                : confirm(`¿Eliminar este RRAA?\n"${desc}..."`);
+            if (ok) {
+                raaaActuales.splice(idx, 1);
+                mostrarTablaRRAA();
+                actualizarStatsRRAA();
+                marcarCambio();
+                mostrarMensaje('✅ RRAA eliminado', 'success');
+            }
+        }
+
+        // ===== ELIMINAR CRITERIO =====
+        async function eliminarCriterio(idx) {
+            const ok = window.appUx && window.appUx.confirm
+                ? await window.appUx.confirm(`¿Eliminar "${criteriosActuales[idx].nombre}"?`, {
+                    title: "Eliminar criterio",
+                    confirmText: "Eliminar"
+                })
+                : confirm(`¿Eliminar "${criteriosActuales[idx].nombre}"?`);
+            if (ok) {
+                criteriosActuales.splice(idx, 1);
+                mostrarTablaCriterios();
+                actualizarStatsCriterios();
+                marcarCambio();
+                mostrarMensaje('✅ Criterio eliminado', 'success');
+            }
+        }
+
+        // ===== CAMBIAR TAB =====
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+
+            const btnFlotante = document.getElementById('btnGuardarFlotante');
+            if (btnFlotante) btnFlotante.classList.toggle('visible', tab === 'ponderaciones');
+
+            if (tab === 'rraa') {
+                mostrarTablaRRAA();
+            } else if (tab === 'criterios') {
+                actualizarFiltroRA();
+                mostrarTablaCriterios();
+            } else if (tab === 'ponderaciones') {
+                actualizarOpcionesPonderacion();
+                mostrarTablaPonderacionesUnidad();
+            } else if (tab === 'resumen') {
+                mostrarResumen();
+            }
+        }
+
+        // ===== RESUMEN PONDERACIONES =====
+        function clasePct(v) {
+            const pct = Math.round((v || 0) * 100);
+            if (!pct) return 'pct-zero';
+            return pct <= 5 ? 'pct-low' : pct <= 15 ? 'pct-mid' : 'pct-high';
+        }
+
+        function textoPct(v) {
+            const pct = (Number(v) || 0) * 100;
+            if (Math.abs(pct) < 0.05) return '0%';
+            const decimals = Math.abs(pct) < 10 && Math.abs(pct % 1) > 0.05 ? 1 : 0;
+            return `${pct.toLocaleString('es-ES', { maximumFractionDigits: decimals, minimumFractionDigits: decimals })}%`;
+        }
+
+        function pctCell(v) {
+            if (!Number(v)) return `<span class="pct-cell pct-zero">—</span>`;
+            return `<span class="pct-cell ${clasePct(v)}">${textoPct(v)}</span>`;
+        }
+
+        function pctTripleCell(values) {
+            const v = values || {};
+            if (!Number(v.final) && !Number(v.instituto) && !Number(v.empresa)) {
+                return `<span class="pct-cell pct-zero">—</span>`;
+            }
+
+            return `<span class="pct-stack">
+                <span class="pct-stack-row"><span class="pct-stack-label">F</span><span class="pct-cell ${clasePct(v.final)}">${textoPct(v.final)}</span></span>
+                <span class="pct-stack-row"><span class="pct-stack-label">Inst</span><span class="pct-cell ${clasePct(v.instituto)}">${textoPct(v.instituto)}</span></span>
+                <span class="pct-stack-row"><span class="pct-stack-label">Emp</span><span class="pct-cell ${clasePct(v.empresa)}">${textoPct(v.empresa)}</span></span>
+            </span>`;
+        }
+
+        function desglosePonderacion(values) {
+            const instituto = Number(values && values.ponderacionInstituto) || 0;
+            const empresa = Number(values && values.ponderacionEmpresa) || 0;
+            const suma = sumarPonderaciones(instituto, empresa);
+            const final = Number(values && values.ponderacion) || suma;
+            return { final, instituto, empresa };
+        }
+
+        function sumarDesglose(total, item) {
+            total.final += Number(item.final) || 0;
+            total.instituto += Number(item.instituto) || 0;
+            total.empresa += Number(item.empresa) || 0;
+            return total;
+        }
+
+        function nuevoDesglose() {
+            return { final: 0, instituto: 0, empresa: 0 };
+        }
+
+        function normalizarDesglose(total, base) {
+            return {
+                final: base.final ? total.final / base.final : 0,
+                instituto: base.instituto ? total.instituto / base.instituto : 0,
+                empresa: base.empresa ? total.empresa / base.empresa : 0
+            };
+        }
+
+        function normalizadoRAConParametros(raNum, totalRA, totalModulo) {
+            const final = totalModulo.final ? totalRA.final / totalModulo.final : 0;
+            const peso = pesoRA(raNum);
+            return {
+                final,
+                instituto: final * (Number(peso.instituto) || 0),
+                empresa: final * (Number(peso.empresa) || 0)
+            };
+        }
+
+        function estadoPonderacionFinal(totalesFinales) {
+            const total = Number(totalesFinales && totalesFinales.final) || 0;
+            const totalParcial = (Number(totalesFinales && totalesFinales.instituto) || 0) +
+                (Number(totalesFinales && totalesFinales.empresa) || 0);
+            const diferencia = Math.abs(total - 1);
+            const diferenciaParcial = Math.abs(totalParcial - 1);
+            const ok = diferencia <= 0.0001 && diferenciaParcial <= 0.0001;
+            return {
+                ok,
+                total,
+                totalParcial,
+                texto: textoPct(total),
+                mensaje: ok ? 'Correcto: suma final 100%' : `Error: final ${textoPct(total)} · parciales ${textoPct(totalParcial)}`
+            };
+        }
+
+        function renderPonderacionesFinales(totalesFinales) {
+            const estado = estadoPonderacionFinal(totalesFinales);
+            return `<div class="ra-peso-summary-card ${estado.ok ? '' : 'error'}">
+                <div>
+                    <strong>Ponderaciones finales</strong>
+                    <p>${estado.mensaje}</p>
+                    <p>Instituto ${textoPct(totalesFinales.instituto)} · Empresa ${textoPct(totalesFinales.empresa)}</p>
+                </div>
+                <div class="ra-peso-summary-value">${estado.texto}</div>
+            </div>`;
+        }
+
+        function raTienePonderacionVisible(peso, finalRa) {
+            return Boolean(
+                Number(peso && peso.instituto) ||
+                Number(peso && peso.empresa) ||
+                Number(finalRa && finalRa.final) ||
+                Number(finalRa && finalRa.instituto) ||
+                Number(finalRa && finalRa.empresa)
+            );
+        }
+
+        function renderPesosRA(resumenRA, totalModulo) {
+            raPesos = normalizarRaPesos(raPesos);
+            const finales = new Map(resumenRA.map((item) => [
+                Number(item.raNum),
+                normalizadoRAConParametros(item.raNum, item.total, totalModulo)
+            ]));
+            const totalesFinales = Array.from(finales.values())
+                .reduce((acc, item) => sumarDesglose(acc, item), nuevoDesglose());
+
+            const cards = raPesos.filter((peso) => {
+                const finalRa = finales.get(Number(peso.raNumero)) || nuevoDesglose();
+                return raTienePonderacionVisible(peso, finalRa);
+            }).map((peso) => {
+                const finalRa = finales.get(Number(peso.raNumero)) || nuevoDesglose();
+                return `<div class="ra-peso-card">
+                    <strong>RA ${peso.raNumero}</strong>
+                    <label>Inst %<input type="number" min="0" max="100" step="1" value="${valorPctInput(peso.instituto)}" onchange="actualizarPesoRA(${peso.raNumero}, 'instituto', this.value)" /></label>
+                    <label>Emp %<input type="number" min="0" max="100" step="1" value="${valorPctInput(peso.empresa)}" onchange="actualizarPesoRA(${peso.raNumero}, 'empresa', this.value)" /></label>
+                    <span class="ra-peso-total" title="Arriba: peso final normalizado del RA. Abajo: reparto final Instituto / Empresa.">
+                        <span class="ra-peso-total-main">${textoPct(finalRa.final)}</span>
+                        <span class="ra-peso-total-label">Inst. / Emp.</span>
+                        <span class="ra-peso-total-split">${textoPct(finalRa.instituto)} / ${textoPct(finalRa.empresa)}</span>
+                    </span>
+                </div>`;
+            }).join('');
+
+            return `<div class="ra-pesos-panel">
+                <h3>Pesos finales por RA</h3>
+                <div class="ra-pesos-grid">${cards}${renderPonderacionesFinales(totalesFinales)}</div>
+            </div>`;
+        }
+
+        function claseColumnaUnidad(idx) {
+            return `unidad-col ${idx % 2 ? 'unidad-col-alt' : 'unidad-col-base'}`;
+        }
+
+        function mostrarResumen() {
+            const el = document.getElementById('resumenContent');
+            if (!el) return;
+
+            const criteriosFiltrados = criteriosActuales.filter((c) =>
+                String(c.texto || '').trim() !== '' ||
+                Number(c.ponderacion) !== 0 ||
+                Number(c.ponderacionInstituto) !== 0 ||
+                Number(c.ponderacionEmpresa) !== 0
+            );
+
+            if (!criteriosFiltrados.length) {
+                el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No hay criterios con datos para mostrar.</p></div>';
+                return;
+            }
+
+            const unidades = ponderacionesUnidad.filter((u) => {
+                if (u.nombre) return true;
+                return criteriosFiltrados.some((c) => {
+                    const p = u.ponderaciones[c.colIdx];
+                    return p && (p.ponderacion || 0) > 0;
+                });
+            });
+
+            const raNumeros = [...new Set(criteriosFiltrados.map((c) => Number(c.raNumero)))]
+                .filter(Boolean).sort((a, b) => a - b);
+
+            const uHeaders = unidades.map((u, idx) =>
+                `<th class="${claseColumnaUnidad(idx)}" title="${escaparHtml(u.nombre || '')}" style="min-width:52px">U${u.numero}</th>`
+            ).join('');
+
+            const grandUnitTotals = unidades.map(() => nuevoDesglose());
+            const grandTotal = nuevoDesglose();
+            const resumenRA = raNumeros.map((raNum) => {
+                const rraa = raaaActuales.find((r) => Number(r.numero) === raNum);
+                const ceRA = criteriosFiltrados.filter((c) => Number(c.raNumero) === raNum);
+                const raUnitTotals = unidades.map(() => nuevoDesglose());
+                const raTotal = nuevoDesglose();
+                const rows = ceRA.map((crit) => {
+                    const vals = unidades.map((u, i) => {
+                        const item = desglosePonderacion(u.ponderaciones[crit.colIdx]);
+                        sumarDesglose(raUnitTotals[i], item);
+                        sumarDesglose(grandUnitTotals[i], item);
+                        sumarDesglose(raTotal, item);
+                        sumarDesglose(grandTotal, item);
+                        return item;
+                    });
+                    const total = vals.reduce((acc, item) => sumarDesglose(acc, item), nuevoDesglose());
+                    return { crit, vals, total };
+                });
+
+                return { raNum, rraa, rows, unitTotals: raUnitTotals, total: raTotal };
+            });
+
+            const grandNormalizadoParametros = resumenRA.reduce((acc, item) => {
+                const normalized = normalizadoRAConParametros(item.raNum, item.total, grandTotal);
+                acc.final += normalized.final;
+                acc.instituto += normalized.instituto;
+                acc.empresa += normalized.empresa;
+                return acc;
+            }, nuevoDesglose());
+
+            let html = renderPesosRA(resumenRA, grandTotal);
+
+            html += `<div class="resumen-wrap ux-table-wrap"><table class="resumen-table ux-table">
+                <thead><tr>
+                    <th class="th-ce">CE / RA</th>
+                    ${uHeaders}
+                    <th class="resumen-total-col" style="min-width:60px; background:#3730a3">Total</th>
+                    <th class="resumen-normalizado-col" style="min-width:72px; background:#312e81">Normalizado</th>
+                </tr></thead><tbody>`;
+
+            resumenRA.forEach((item) => {
+                if (!item.rows.length) return;
+                const raKey = `resumen-ra-${item.raNum}`;
+                html += `<tr class="tr-ra-header" onclick="toggleResumenRA(${item.raNum}, this)" style="cursor:pointer;" title="Click para colapsar/expandir">
+                    <td class="td-ce" colspan="${unidades.length + 3}">RA ${item.raNum}${escaparHtml(item.rraa ? ` — ${item.rraa.descripcion}` : '')}<span style="float:right;font-size:0.8em;color:#a5b4fc;">▶</span></td>
+                </tr>`;
+
+                item.rows.forEach(({ crit, vals, total }) => {
+                    const ceCells = vals.map((v, idx) => `<td class="${claseColumnaUnidad(idx)}">${pctTripleCell(v)}</td>`).join('');
+                    const ceLabel = crit.codigo || crit.nombre;
+                    const ceTitleFull = crit.texto ? `${ceLabel}: ${crit.texto}` : ceLabel;
+                    html += `<tr class="${raKey}-row" style="display:none">
+                        <td class="td-ce" title="${escaparHtml(ceTitleFull)}">${escaparHtml(ceLabel)}</td>
+                        ${ceCells}
+                        <td class="resumen-total-col">${pctTripleCell(total)}</td>
+                        <td class="resumen-normalizado-col">${pctTripleCell(normalizarDesglose(total, grandTotal))}</td>
+                    </tr>`;
+                });
+
+                const raUnitCells = item.unitTotals.map((v, idx) => `<td class="${claseColumnaUnidad(idx)}">${pctTripleCell(v)}</td>`).join('');
+                html += `<tr class="tr-subtotal ${raKey}-row" style="display:none">
+                    <td class="td-ce">Subtotal RA ${item.raNum}</td>
+                    ${raUnitCells}
+                    <td class="resumen-total-col">${pctTripleCell(item.total)}</td>
+                    <td class="resumen-normalizado-col">${pctTripleCell(normalizadoRAConParametros(item.raNum, item.total, grandTotal))}</td>
+                </tr>`;
+            });
+
+            const grandUnitCells = grandUnitTotals.map((v, idx) => `<td class="${claseColumnaUnidad(idx)}">${pctTripleCell(v)}</td>`).join('');
+            html += `<tr class="tr-grand-total">
+                <td class="td-ce">TOTAL MÓDULO</td>
+                ${grandUnitCells}
+                <td class="resumen-total-col">${pctTripleCell(grandTotal)}</td>
+                <td class="resumen-normalizado-col">${pctTripleCell(grandNormalizadoParametros)}</td>
+            </tr>`;
+
+            html += '</tbody></table></div>';
+
+            const estadoFinal = estadoPonderacionFinal(grandNormalizadoParametros);
+            const alertColor = estadoFinal.ok ? '#065f46' : '#991b1b';
+            const alertBg = estadoFinal.ok ? '#d1fae5' : '#fee2e2';
+            html += `<p style="margin-top:10px; padding:8px 12px; border-radius:6px; background:${alertBg}; color:${alertColor}; font-size:0.85em; font-weight:700; display:inline-block;">
+                Suma total de ponderaciones del módulo: ${estadoFinal.texto}. ${estadoFinal.mensaje}
+            </p>`;
+
+            el.innerHTML = html;
+        }
+
+        // ===== DESCARGAR EXCEL =====
+        function descargarExcel() {
+            if (isElectronMode) {
+                guardarExcelLocal();
+                return;
+            }
+
+            if (!workbook) {
+                mostrarMensaje('❌ No hay archivo cargado', 'error');
+                return;
+            }
+
+            mostrarLoading(true);
+
+            try {
+                // Actualizar hoja DATOS con RRAA
+                const sheetDatos = workbook.Sheets['DATOS'];
+                const jsonDatos = XLSX.utils.sheet_to_json(sheetDatos, { header: 1 });
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < jsonDatos.length; i++) {
+                    if (jsonDatos[i][1] && String(jsonDatos[i][1]).toUpperCase().includes('RRAA')) {
+                        headerRowIdx = i;
+                        break;
+                    }
+                }
+
+                if (headerRowIdx !== -1) {
+                    const raaaStart = headerRowIdx + 1;
+                    raaaActuales.forEach((rraa, idx) => {
+                        const rowIdx = raaaStart + idx;
+                        jsonDatos[rowIdx] = jsonDatos[rowIdx] || [];
+                        jsonDatos[rowIdx][0] = rraa.numero;
+                        jsonDatos[rowIdx][1] = rraa.descripcion;
+                    });
+                    const newSheetDatos = XLSX.utils.aoa_to_sheet(jsonDatos);
+                    Object.keys(sheetDatos).forEach(key => {
+                        if (key.startsWith('!')) {
+                            newSheetDatos[key] = sheetDatos[key];
+                        }
+                    });
+                    workbook.Sheets['DATOS'] = newSheetDatos;
+                }
+
+                // Actualizar hoja PESOS con criterios
+                const sheetPesos = workbook.Sheets['PESOS'];
+                const jsonPesos = XLSX.utils.sheet_to_json(sheetPesos, { header: 1 });
+
+                criteriosActuales.forEach((crit, idx) => {
+                    const rowIdx = 5 + idx; // Fila 6 en adelante
+                    jsonPesos[rowIdx] = jsonPesos[rowIdx] || [];
+                    jsonPesos[rowIdx][0] = crit.nombre;
+                    jsonPesos[rowIdx][2] = crit.ponderacion;
+                });
+
+                normalizarRaPesos(raPesos).forEach((peso) => {
+                    const colIdx = peso.colIdx !== null && peso.colIdx !== undefined && Number.isInteger(Number(peso.colIdx))
+                        ? Number(peso.colIdx)
+                        : primeraColumnaCriterioRA(peso.raNumero);
+                    jsonPesos[24] = jsonPesos[24] || [];
+                    jsonPesos[25] = jsonPesos[25] || [];
+                    jsonPesos[24][colIdx] = peso.instituto || 0;
+                    jsonPesos[25][colIdx] = peso.empresa || 0;
+                });
+
+                const newSheetPesos = XLSX.utils.aoa_to_sheet(jsonPesos);
+                Object.keys(sheetPesos).forEach(key => {
+                    if (key.startsWith('!')) {
+                        newSheetPesos[key] = sheetPesos[key];
+                    }
+                });
+                workbook.Sheets['PESOS'] = newSheetPesos;
+
+                // Descargar
+                const nombreArchivo = archivoOriginal.name || 'plantilla313_actualizado.xlsx';
+                XLSX.writeFile(workbook, nombreArchivo);
+
+                mostrarMensaje(`✅ Archivo descargado: ${nombreArchivo}`, 'success');
+                mostrarLoading(false);
+
+            } catch (error) {
+                mostrarMensaje('❌ Error: ' + error.message, 'error');
+                mostrarLoading(false);
+            }
+        }
+
+        // ===== CARGAR NUEVO ARCHIVO =====
+        function cargarNuevo() {
+            if (isElectronMode) {
+                seleccionarArchivoLocal();
+                return;
+            }
+
+            location.reload();
+        }
+
+        // ===== GUARDADO AUTOMÁTICO =====
+        function marcarCambio() {
+            hayChangesSinGuardar = true;
+            if (!document.title.startsWith('● ')) document.title = '● ' + _BASE_TITLE;
+
+            // Cancelar timeout anterior si existe
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+            }
+
+            // Guardar automaticamente despues de 30 segundos de inactividad
+            autoSaveTimeout = setTimeout(() => {
+                guardarCambiosAutomaticamente();
+            }, AUTO_SAVE_DELAY_MS);
+        }
+
+        function mostrarEstadoGuardado(estado, mensaje) {
+            const statusEl = document.getElementById('saveStatus');
+            statusEl.textContent = mensaje;
+            statusEl.className = `save-status ${estado}`;
+            statusEl.style.display = 'block';
+
+            if (estado !== 'saving') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        async function guardarCambiosAutomaticamente() {
+            if (!hayChangesSinGuardar || !isElectronMode) {
+                return true;
+            }
+
+            try {
+                mostrarEstadoGuardado('saving', '💾 Guardando...');
+
+                const payload = {
+                    rraa: raaaActuales,
+                    criterios: criteriosActuales,
+                    ponderacionesUnidad: ponderacionesUnidad,
+                    raPesos: normalizarRaPesos(raPesos)
+                };
+
+                const result = await window.electronExcel.saveRraaCriterios(payload);
+
+                if (result && result.rraa) {
+                    raaaActuales = result.rraa;
+                    criteriosActuales = result.criterios || criteriosActuales;
+                    ponderacionesUnidad = result.ponderacionesUnidad || ponderacionesUnidad;
+                    raPesos = normalizarRaPesos(result.raPesos || raPesos);
+                    recalcularTodasInstEmpresa();
+                }
+
+                hayChangesSinGuardar = false;
+                document.title = _BASE_TITLE;
+                actualizarVistaActiva();
+                await actualizarMarcaArchivo();
+                if (autoSaveTimeout) {
+                    clearTimeout(autoSaveTimeout);
+                    autoSaveTimeout = null;
+                }
+                mostrarEstadoGuardado('saved', '✅ Guardado');
+                console.log('✅ Cambios guardados automáticamente');
+                return true;
+            } catch (error) {
+                mostrarEstadoGuardado('error', `❌ ${error.message || 'Error al guardar'}`);
+                console.error('Error en guardado automático:', error);
+                return false;
+            }
+        }
+
+        async function guardarCambiosAntesDeCerrar() {
+            if (!isElectronMode || !hayChangesSinGuardar) {
+                return true;
+            }
+
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+                autoSaveTimeout = null;
+            }
+
+            mostrarEstadoGuardado('saving', 'Guardando antes de cerrar...');
+            return guardarCambiosAutomaticamente();
+        }
+
+        window.guardarCambiosAntesDeCerrar = guardarCambiosAntesDeCerrar;
+
+        function guardarCambiosForzado() {
+            if (!isElectronMode) {
+                mostrarMensaje('⚠️ Solo disponible en modo local (Electron)', 'info');
+                return;
+            }
+
+            hayChangesSinGuardar = true;
+            guardarCambiosAutomaticamente();
+        }
+
+        async function guardarExcelLocal() {
+            try {
+                mostrarLoading(true);
+
+                const payload = {
+                    rraa: raaaActuales,
+                    criterios: criteriosActuales,
+                    ponderacionesUnidad: ponderacionesUnidad,
+                    raPesos: normalizarRaPesos(raPesos)
+                };
+
+                const result = await window.electronExcel.saveRraaCriterios(payload);
+
+                if (result && result.rraa) {
+                    raaaActuales = result.rraa;
+                    criteriosActuales = result.criterios || criteriosActuales;
+                    ponderacionesUnidad = result.ponderacionesUnidad || ponderacionesUnidad;
+                    raPesos = normalizarRaPesos(result.raPesos || raPesos);
+                    recalcularTodasInstEmpresa();
+                }
+
+                hayChangesSinGuardar = false;
+                document.title = _BASE_TITLE;
+                await actualizarMarcaArchivo();
+                mostrarTablaRRAA();
+                mostrarTablaCriterios();
+                mostrarTablaPonderacionesUnidad();
+                actualizarStatsRRAA();
+                actualizarStatsCriterios();
+                actualizarOpcionesPonderacion();
+                actualizarVistaActiva();
+                mostrarMensaje(`✅ Guardado en ${result.fileName || 'archivo'}`, 'success');
+                mostrarLoading(false);
+            } catch (error) {
+                mostrarMensaje(`❌ Error: ${error.message}`, 'error');
+                mostrarLoading(false);
+            }
+        }
+
+        // ===== IMPORTACIÓN DE ARCHIVOS =====
+        async function mostrarOpcionesImportacion() {
+            const opcion = window.appUx && window.appUx.confirm
+                ? await window.appUx.confirm('¿Deseas importar datos de otro archivo Excel?', {
+                    title: 'Importar datos',
+                    confirmText: 'Seleccionar archivo'
+                })
+                : confirm('¿Deseas importar datos de otro archivo Excel?\n\nOK = Seleccionar archivo\nCancelar = Cancelar');
+            if (opcion) {
+                const fileInput = document.getElementById('fileInput');
+                fileInput.click();
+            }
+        }
+
+        function importarDesdeArchivo(file) {
+            mostrarLoading(true);
+            const reader = new FileReader();
+
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const importWb = XLSX.read(data, { type: 'array' });
+
+                    if (!importWb.SheetNames.includes('DATOS') || !importWb.SheetNames.includes('PESOS')) {
+                        mostrarMensaje('❌ El archivo debe tener las hojas DATOS y PESOS', 'error');
+                        mostrarLoading(false);
+                        return;
+                    }
+
+                    // Importar RRAA
+                    const datosRows = XLSX.utils.sheet_to_json(importWb.Sheets['DATOS'], { header: 1 });
+                    const importRraa = [];
+                    const rraaStart = findRraaStartRow(datosRows);
+
+                    if (rraaStart !== -1) {
+                        for (let i = rraaStart; i < datosRows.length; i++) {
+                            const row = datosRows[i] || [];
+                            const numero = row[5];
+                            const descripcion = row[6];
+
+                            if (!numero && !descripcion) break;
+
+                            importRraa.push({
+                                numero: numero || importRraa.length + 1,
+                                descripcion: descripcion ? String(descripcion).trim() : ''
+                            });
+                        }
+                    }
+
+                    // Importar Criterios
+                    const pesosRows = XLSX.utils.sheet_to_json(importWb.Sheets['PESOS'], { header: 1 });
+                    const importTextos = extraerTextosCriterios(datosRows, importWb.Sheets['DATOS']);
+                    const importCriterios = [];
+
+                    for (let colIdx = 0; colIdx < (pesosRows[3] || []).length; colIdx++) {
+                        const codigo = pesosRows[3] && pesosRows[3][colIdx];
+
+                        if (!esCodigoCriterio(codigo)) continue;
+
+                        const raNumero = numeroRaDesdeCriterio(codigo);
+                        const rraa = importRraa.find(item => Number(item.numero) === raNumero);
+
+                        importCriterios.push({
+                            numero: importCriterios.length + 1,
+                            codigo: String(codigo),
+                            nombre: String(codigo),
+                            raNumero,
+                            raDescripcion: rraa ? rraa.descripcion : '',
+                            ponderacion: pesosRows[21] && pesosRows[21][colIdx] ? pesosRows[21][colIdx] : 0,
+                            ponderacionInstituto: pesosRows[21] && pesosRows[21][colIdx + 1] ? pesosRows[21][colIdx + 1] : 0,
+                            ponderacionEmpresa: pesosRows[21] && pesosRows[21][colIdx + 2] ? pesosRows[21][colIdx + 2] : 0,
+                            texto: importTextos[normalizarCodigoCriterio(codigo)] || '',
+                            colIdx
+                        });
+                    }
+
+                    // Importar Unidades
+                    const unidadesStart = findUnidadesStartRow(datosRows);
+                    const importUnidades = [];
+
+                    if (unidadesStart !== -1) {
+                        for (let idx = 0; idx < 16; idx++) {
+                            const row = datosRows[unidadesStart + idx] || [];
+                            const codigo = row[8] || `U${idx + 1}`;
+                            const nombre = row[9] || '';
+                            const evaluacion = row[10] || '';
+                            const horas = row[11] ?? '';
+
+                            if (codigo || nombre || evaluacion || horas !== '') {
+                                importUnidades.push({
+                                    codigo: String(codigo || `U${idx + 1}`),
+                                    nombre: String(nombre || ''),
+                                    evaluacion: String(evaluacion || ''),
+                                    horas: horas === null ? '' : String(horas)
+                                });
+                            }
+                        }
+                    }
+
+                    // Mostrar resumen de importación
+                    const resumen = `
+📊 IMPORTACIÓN COMPLETADA
+
+RRAA: ${importRraa.length} registros
+CE: ${importCriterios.length} registros
+Unidades: ${importUnidades.length} registros
+
+¿Deseas reemplazar los datos actuales con los importados?
+                    `.trim();
+
+                    const confirmarImportacion = window.appUx && window.appUx.confirm
+                        ? await window.appUx.confirm(resumen, {
+                            title: 'Reemplazar datos actuales',
+                            confirmText: 'Reemplazar'
+                        })
+                        : confirm(resumen);
+
+                    if (confirmarImportacion) {
+                        raaaActuales = importRraa;
+                        criteriosActuales = importCriterios;
+                        raPesos = normalizarRaPesos([]);
+                        mostrarTablaRRAA();
+                        mostrarTablaCriterios();
+                        mostrarTablaPonderacionesUnidad();
+                        actualizarStatsRRAA();
+                        actualizarStatsCriterios();
+                        actualizarOpcionesRA();
+                        actualizarOpcionesPonderacion();
+                        mostrarMensaje(`✅ Importados: ${importRraa.length} RRAA, ${importCriterios.length} CE`, 'success');
+                    }
+
+                    mostrarLoading(false);
+
+                } catch (error) {
+                    mostrarMensaje('❌ Error: ' + error.message, 'error');
+                    mostrarLoading(false);
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function findRraaStartRow(rows) {
+            const headerRowIdx = rows.findIndex((row) => {
+                const rraaHeader = row && row[6];
+                return rraaHeader && String(rraaHeader).toUpperCase().includes('RRAA');
+            });
+
+            return headerRowIdx === -1 ? -1 : headerRowIdx + 1;
+        }
+
+        function findUnidadesStartRow(rows) {
+            const headerRowIdx = rows.findIndex((row) => {
+                const unidadHeader = row && row[9];
+                return (
+                    unidadHeader &&
+                    row[8] &&
+                    String(unidadHeader).toUpperCase().includes('UNIDADES')
+                );
+            });
+
+            return headerRowIdx === -1 ? -1 : headerRowIdx + 1;
+        }
+
+        // ===== FUNCIONES AUXILIARES =====
+        function mostrarMensaje(texto, tipo) {
+            const elem = document.getElementById('message');
+            elem.textContent = texto;
+            elem.className = `message show ${tipo}`;
+            setTimeout(() => {
+                elem.classList.remove('show');
+            }, 5000);
+        }
+
+        function mostrarLoading(mostrar) {
+            document.getElementById('loading').style.display = mostrar ? 'block' : 'none';
+        }
+
+        // Verificar carga de XLSX
+        const xlsxCheckInterval = setInterval(() => {
+            if (checkXLSX()) {
+                clearInterval(xlsxCheckInterval);
+            }
+        }, 500);
+    </script>
+</body>
+</html>

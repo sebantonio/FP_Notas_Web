@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas RRAA y CCEE</title>
+    <script src="app-bridge.js"></script>
+    <link rel="stylesheet" href="ux-common.css">
+    <script src="ux-common.js" defer></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            padding: 20px;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f6fb;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow: hidden;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 14px 42px rgba(31,41,55,0.18);
+        }
+
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .nav-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav-button,
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.92em;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .nav-button {
+            color: #6366f1;
+            background: white;
+            border: 2px solid #6366f1;
+            cursor: pointer;
+        }
+
+        .nav-link {
+            color: white;
+            background: #6366f1;
+            border: 2px solid #6366f1;
+        }
+
+        .header {
+            padding: 28px 30px;
+            color: white;
+            background: #3730a3;
+        }
+
+        .header h1 {
+            margin-bottom: 6px;
+            font-size: 2em;
+        }
+
+        .header p {
+            opacity: 0.92;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .message {
+            display: none;
+            margin-bottom: 16px;
+            padding: 13px 16px;
+            border-radius: 6px;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.info {
+            color: #0c5460;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+
+        .message.error {
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: minmax(160px, 220px) minmax(220px, 1fr) minmax(220px, 1fr) auto;
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 18px;
+            padding: 16px;
+            background: #f8f9ff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #4b5563;
+            font-size: 0.88em;
+            font-weight: 700;
+        }
+
+        select,
+        input {
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font: inherit;
+            background: white;
+        }
+
+        button {
+            min-height: 40px;
+            padding: 9px 16px;
+            color: white;
+            font: inherit;
+            font-weight: 700;
+            background: #6366f1;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .stat {
+            padding: 14px;
+            background: #f8f9ff;
+            border-left: 4px solid #6366f1;
+            border-radius: 8px;
+        }
+
+        .stat span {
+            display: block;
+            margin-bottom: 4px;
+            color: #6b7280;
+            font-size: 0.86em;
+        }
+
+        .stat strong {
+            color: #4f46e5;
+            font-size: 1.3em;
+        }
+
+        .table-wrap {
+            overflow: auto;
+            max-height: 48vh;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            min-width: 960px;
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            color: white;
+            background: #6366f1;
+        }
+
+        .student-col {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            width: 260px;
+            background: white;
+        }
+
+        th.student-col {
+            z-index: 3;
+            background: #4338ca;
+        }
+
+        tr:hover td {
+            background: #f8f9ff;
+        }
+
+        .num {
+            text-align: center;
+            font-weight: 800;
+        }
+
+        .grade {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            min-height: 30px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-weight: 800;
+        }
+
+        .grade.ok {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .grade.warn {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .grade.bad {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .grade.empty {
+            color: #6b7280;
+            background: #f3f4f6;
+        }
+
+        .grade-button {
+            border: none;
+            background: transparent;
+            padding: 0;
+            min-height: 0;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .grade-button .grade {
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+
+        .grade-button:hover .grade,
+        .grade-button:focus-visible .grade {
+            transform: translateY(-1px);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+        }
+
+        tr.selected td {
+            background: #eef2ff;
+        }
+
+        .detail {
+            margin-top: 20px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .detail-selector {
+            min-width: 240px;
+        }
+
+        .criteria-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .criterion-card {
+            padding: 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .criterion-card span {
+            display: block;
+            margin-bottom: 6px;
+            color: #6b7280;
+            font-size: 0.82em;
+            font-weight: 700;
+        }
+
+        .view-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0;
+        }
+
+        .tab-btn {
+            padding: 7px 18px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            font: inherit;
+            font-size: 0.9em;
+            font-weight: 700;
+            cursor: pointer;
+            color: #4b5563;
+            transition: background 0.15s;
+        }
+
+        .tab-btn.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+
+        .tab-btn:not(.active):hover {
+            background: #e5e7eb;
+        }
+
+        .summary-view {
+            border: 1px solid #e5e7eb;
+            border-radius: 0 8px 8px 8px;
+            padding: 14px;
+            max-height: 55vh;
+            overflow-y: auto;
+            background: #fafbff;
+        }
+
+        .ra-block {
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .ra-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: #f0f3ff;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .ra-header:hover {
+            background: #e8edff;
+        }
+
+        .ra-label {
+            flex: 1;
+            font-weight: 700;
+            font-size: 0.93em;
+            color: #1f2937;
+        }
+
+        .ra-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 0.85em;
+            font-weight: 800;
+        }
+
+        .ra-stats {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.83em;
+            color: #4b5563;
+        }
+
+        .ra-bar-wrap {
+            width: 80px;
+            height: 7px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .ra-bar {
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .bar-ok  { background: #22c55e; }
+        .bar-warn { background: #f59e0b; }
+        .bar-bad  { background: #ef4444; }
+        .bar-none { background: #d1d5db; }
+
+        .ra-toggle {
+            color: #9ca3af;
+            font-size: 0.8em;
+            flex-shrink: 0;
+        }
+
+        .ce-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+            padding: 12px 14px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .ce-item {
+            padding: 8px 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+        }
+
+        .ce-code {
+            font-size: 0.77em;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .ce-sub {
+            font-size: 0.74em;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+
+        .summary-empty {
+            color: #6b7280;
+            font-style: italic;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        /* ── Semáforo ─────────────────────────────────────────── */
+        .status-col { width: 28px; text-align: center; padding: 6px 4px; }
+        th.status-col { background: #4338ca; }
+        .status-dot {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-dot.ok   { background: #22c55e; box-shadow: 0 0 0 2px #bbf7d0; }
+        .status-dot.warn { background: #f59e0b; box-shadow: 0 0 0 2px #fde68a; }
+        .status-dot.bad  { background: #ef4444; box-shadow: 0 0 0 2px #fecaca; }
+        .status-dot.empty{ background: #d1d5db; }
+
+        /* ── RA Badges (ficha rápida) ─────────────────────────── */
+        .ra-badge-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            background: #f8f9ff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .ra-badge-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            min-width: 54px;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+        }
+        .ra-badge-item.active { outline: 3px solid rgba(99,102,241,0.28); outline-offset: 2px; }
+        .ra-badge-item.ok   { background: #dcfce7; border: 1px solid #86efac; }
+        .ra-badge-item.warn { background: #fef3c7; border: 1px solid #fcd34d; }
+        .ra-badge-item.bad  { background: #fee2e2; border: 1px solid #fca5a5; }
+        .ra-badge-item.empty{ background: #f3f4f6; border: 1px solid #e5e7eb; }
+        .ra-badge-lbl { font-size: 0.72em; font-weight: 700; color: #6b7280; }
+        .ra-badge-nota { font-size: 1em; font-weight: 800; color: #1f2937; }
+
+        /* ── Heatmap ──────────────────────────────────────────── */
+        .heatmap-view {
+            border: 1px solid #e5e7eb;
+            border-radius: 0 8px 8px 8px;
+            max-height: 55vh;
+            overflow: auto;
+            background: #fafbff;
+        }
+        .heatmap-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.82em;
+            white-space: nowrap;
+        }
+        .heatmap-table th {
+            position: sticky;
+            top: 0;
+            background: #6366f1;
+            color: white;
+            padding: 8px 10px;
+            text-align: center;
+            z-index: 2;
+            font-weight: 700;
+        }
+        .hm-th-name {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 3 !important;
+            background: #4338ca !important;
+            min-width: 220px;
+        }
+        .heatmap-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+        .hm-name {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 1;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .heatmap-table tr:hover td { filter: brightness(0.95); }
+        .hm-ok   { background: #dcfce7; color: #166534; font-weight: 700; }
+        .hm-warn { background: #fef3c7; color: #92400e; font-weight: 700; }
+        .hm-bad  { background: #fee2e2; color: #991b1b; font-weight: 700; }
+        .hm-empty{ color: #d1d5db; }
+        .hm-final{ font-weight: 800; border-left: 2px solid #6366f1; }
+
+        @media (max-width: 800px) {
+            body {
+                padding: 10px;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .toolbar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="ux-app-shell ux-page-visor-notas">
+    <div class="container ux-shell">
+        <nav class="page-nav ux-page-nav" aria-label="Navegacion">
+            <div class="nav-group ux-nav-group">
+                <button class="nav-button ux-button" type="button" onclick="window.history.back()">Atras</button>
+                <a class="nav-link ux-link-button primary" href="index.html">Inicio</a>
+            </div>
+            <div class="nav-group ux-nav-group">
+                <a class="nav-link ux-link-button primary" href="gestor-notas.html">Introducir notas</a>
+                <a class="nav-link ux-link-button primary" href="visor-actividades.html">Actividades</a>
+            </div>
+        </nav>
+
+        <header class="header ux-page-header">
+            <h1>Notas RRAA y CCEE</h1>
+            <p id="subtitle">Vista de consulta de evaluaciones, resultados de aprendizaje y criterios</p>
+        </header>
+
+        <main class="content ux-content">
+            <div id="message" class="message"></div>
+
+            <section class="toolbar ux-toolbar" aria-label="Filtros">
+                <div>
+                    <label for="evaluationSelect">Evaluacion</label>
+                    <select id="evaluationSelect">
+                        <option value="1">1 EVA</option>
+                        <option value="2">2 EVA</option>
+                        <option value="2solo">2 EVA solo</option>
+                        <option value="3">3 EVA</option>
+                        <option value="3solo">3 EVA solo</option>
+                        <option value="final">Final</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="studentSelect">Alumno</label>
+                    <select id="studentSelect"></select>
+                </div>
+                <div>
+                    <label for="searchInput">Buscar alumno</label>
+                    <input id="searchInput" type="search" placeholder="Nombre del alumno">
+                </div>
+                <button type="button" id="reloadButton">Recargar</button>
+            </section>
+
+            <section class="stats ux-summary" aria-label="Resumen">
+                <div class="stat ux-stat">
+                    <span>Archivo</span>
+                    <strong id="fileName">-</strong>
+                </div>
+                <div class="stat ux-stat">
+                    <span>Alumnos</span>
+                    <strong id="studentCount">0</strong>
+                </div>
+                <div class="stat ux-stat">
+                    <span>Aprobados</span>
+                    <strong id="passedCount">0</strong>
+                </div>
+                <div class="stat ux-stat">
+                    <span>Media</span>
+                    <strong id="averageGrade">-</strong>
+                </div>
+            </section>
+
+            <section class="teacher-panel" id="teacherAlerts" aria-label="Avisos para el profesor"></section>
+
+            <section class="quick-filters" id="studentQuickFilters" aria-label="Filtros rapidos de alumnos">
+                <button class="quick-filter active" type="button" data-student-filter="all" data-label="Todos">Todos <span class="quick-count">0</span></button>
+                <button class="quick-filter" type="button" data-student-filter="missing" data-label="Sin final">Sin final <span class="quick-count">0</span></button>
+                <button class="quick-filter" type="button" data-student-filter="fail" data-label="Suspensos">Suspensos <span class="quick-count">0</span></button>
+                <button class="quick-filter" type="button" data-student-filter="risk" data-label="Riesgo RA">Riesgo RA <span class="quick-count">0</span></button>
+                <button class="quick-filter" type="button" data-student-filter="pass" data-label="Aprobados">Aprobados <span class="quick-count">0</span></button>
+            </section>
+
+            <div class="view-tabs ux-tabs" role="tablist">
+                <button class="tab-btn active ux-tab" type="button" id="tabTabla" role="tab" onclick="switchTab('tabla')">Tabla de notas</button>
+                <button class="tab-btn ux-tab" type="button" id="tabResumen" role="tab" onclick="switchTab('resumen')">Resumen visual</button>
+                <button class="tab-btn ux-tab" type="button" id="tabHeatmap" role="tab" onclick="switchTab('heatmap')">Mapa de calor</button>
+            </div>
+
+            <section class="table-wrap ux-table-wrap" id="viewTabla" aria-label="Tabla de notas">
+                <table class="ux-table">
+                    <thead id="notesHead"></thead>
+                    <tbody id="notesBody"></tbody>
+                </table>
+            </section>
+
+            <section class="summary-view" id="viewResumen" style="display:none" aria-label="Resumen visual por RA y CE">
+                <div id="summaryContent"><p class="summary-empty">Cargando datos...</p></div>
+            </section>
+
+            <section class="heatmap-view" id="viewHeatmap" style="display:none" aria-label="Mapa de calor RA por alumno">
+                <div id="heatmapContent"><p class="summary-empty">Cargando datos...</p></div>
+            </section>
+
+            <section class="detail" id="detailSection" aria-label="Detalle del alumno">
+                <div class="detail-header">
+                    <div>
+                        <h2 id="detailName">Selecciona un alumno</h2>
+                        <p id="detailFinal">Nota final: -</p>
+                    </div>
+                    <div class="detail-actions">
+                        <a class="mini-action" id="studentReportLink" href="informes.html">Informe</a>
+                        <div class="detail-selector">
+                            <label for="raDetailSelect">Ver criterios de</label>
+                            <select id="raDetailSelect"></select>
+                        </div>
+                    </div>
+                </div>
+                <div id="raBadgeRow" class="ra-badge-row" style="display:none"></div>
+                <div id="criteriaGrid" class="criteria-grid"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let state = null;
+        let selectedRowIdx = null;
+        let selectedRaColIdx = null;
+        let activeStudentFilter = "all";
+
+        const messageBox = document.getElementById("message");
+        const evaluationSelect = document.getElementById("evaluationSelect");
+        const studentSelect = document.getElementById("studentSelect");
+        const searchInput = document.getElementById("searchInput");
+        const reloadButton = document.getElementById("reloadButton");
+        const notesHead = document.getElementById("notesHead");
+        const notesBody = document.getElementById("notesBody");
+        const fileName = document.getElementById("fileName");
+        const studentCount = document.getElementById("studentCount");
+        const passedCount = document.getElementById("passedCount");
+        const averageGrade = document.getElementById("averageGrade");
+        const subtitle = document.getElementById("subtitle");
+        const detailName = document.getElementById("detailName");
+        const detailFinal = document.getElementById("detailFinal");
+        const raDetailSelect = document.getElementById("raDetailSelect");
+        const criteriaGrid = document.getElementById("criteriaGrid");
+        const teacherAlerts = document.getElementById("teacherAlerts");
+        const studentQuickFilters = document.getElementById("studentQuickFilters");
+        const studentReportLink = document.getElementById("studentReportLink");
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!window.electronExcel) {
+                showMessage("Abre esta pantalla desde la aplicacion local.", "error");
+                return;
+            }
+
+            reloadButton.addEventListener("click", loadNotes);
+            searchInput.addEventListener("input", renderTable);
+            studentSelect.addEventListener("change", () => selectStudent(Number(studentSelect.value), { clearSearch: true, scroll: true }));
+            studentQuickFilters.addEventListener("click", (event) => {
+                const button = event.target.closest("[data-student-filter]");
+                if (!button) return;
+                activeStudentFilter = button.dataset.studentFilter || "all";
+                renderStudentQuickFilters(getStudentFilterCounts());
+                renderTable();
+            });
+            evaluationSelect.addEventListener("change", loadNotes);
+            raDetailSelect.addEventListener("change", () => {
+                selectedRaColIdx = Number(raDetailSelect.value);
+                renderDetail();
+            });
+            loadNotes();
+        });
+
+        async function loadNotes() {
+            try {
+                showMessage("Leyendo hoja de evaluacion...", "info");
+                const data = await window.electronExcel.getNotasEvaluacion({
+                    evaluacion: evaluationSelect.value
+                });
+
+                if (!data) {
+                    showMessage("No se encontro el Excel en el directorio de la app.", "error");
+                    return;
+                }
+
+                state = data;
+                selectedRowIdx = data.alumnos && data.alumnos[0] ? data.alumnos[0].rowIdx : null;
+                selectedRaColIdx = data.raColumns && data.raColumns[0] ? data.raColumns[0].colIdx : null;
+                renderAll();
+                showMessage("Notas cargadas correctamente.", "success");
+            } catch (error) {
+                showMessage(error.message || "No se pudieron cargar las notas.", "error");
+            }
+        }
+
+        function renderAll() {
+            subtitle.textContent = `${state.title} - ${state.sheetName}`;
+            fileName.textContent = state.fileName || "-";
+            renderStats();
+            renderTeacherAlerts();
+            renderStudentQuickFilters(getStudentFilterCounts());
+            renderStudentSelect();
+            renderTable();
+            renderDetail();
+            if (activeTab === "resumen") renderSummary();
+            if (activeTab === "heatmap") renderHeatmap();
+        }
+
+        function renderStats() {
+            const alumnos = state.alumnos || [];
+            const numeric = alumnos.map((item) => item.final).filter((value) => typeof value === "number");
+            const passed = numeric.filter((value) => value >= 5).length;
+            const average = numeric.length
+                ? numeric.reduce((total, value) => total + value, 0) / numeric.length
+                : null;
+
+            studentCount.textContent = alumnos.length;
+            passedCount.textContent = passed;
+            averageGrade.textContent = average === null ? "-" : formatGrade(average);
+        }
+
+        function renderStudentSelect() {
+            const alumnos = state.alumnos || [];
+            if (!alumnos.length) {
+                studentSelect.innerHTML = '<option value="">Sin alumnos</option>';
+                studentSelect.disabled = true;
+                return;
+            }
+
+            if (!alumnos.some((item) => Number(item.rowIdx) === Number(selectedRowIdx))) {
+                selectedRowIdx = alumnos[0].rowIdx;
+            }
+
+            studentSelect.disabled = false;
+            studentSelect.innerHTML = alumnos.map((alumno) =>
+                `<option value="${alumno.rowIdx}" ${Number(alumno.rowIdx) === Number(selectedRowIdx) ? "selected" : ""}>${escapeHtml(alumno.nombre)}</option>`
+            ).join("");
+        }
+
+        function getActiveRaColIdxs() {
+            const alumnos = state.alumnos || [];
+            const active = new Set();
+            alumnos.forEach((alumno) => {
+                (alumno.rraa || []).forEach((ra) => {
+                    if (typeof ra.nota === "number" && ra.nota !== 0) active.add(ra.colIdx);
+                });
+            });
+            return active;
+        }
+
+        function studentStatus(alumno) {
+            const grades = (alumno.rraa || []).map((r) => r.nota).filter((v) => typeof v === "number" && v > 0);
+            if (!grades.length) return "empty";
+            if (grades.some((v) => v < 3)) return "bad";
+            if (grades.some((v) => v < 5)) return "warn";
+            return "ok";
+        }
+
+        function statusTitle(status) {
+            return { ok: "Aprueba todos los RA", warn: "Algún RA en riesgo (<5)", bad: "Algún RA crítico (<3)", empty: "Sin notas" }[status] || "";
+        }
+
+        function hasFinalGrade(alumno) {
+            return typeof alumno.final === "number" && alumno.final > 0;
+        }
+
+        function hasRaRisk(alumno) {
+            return (alumno.rraa || []).some((ra) => typeof ra.nota === "number" && ra.nota > 0 && ra.nota < 5);
+        }
+
+        function matchesStudentFilter(alumno) {
+            if (activeStudentFilter === "missing") return !hasFinalGrade(alumno);
+            if (activeStudentFilter === "fail") return hasFinalGrade(alumno) && alumno.final < 5;
+            if (activeStudentFilter === "risk") return hasRaRisk(alumno);
+            if (activeStudentFilter === "pass") return hasFinalGrade(alumno) && alumno.final >= 5;
+            return true;
+        }
+
+        function getStudentFilterCounts() {
+            const alumnos = state && state.alumnos ? state.alumnos : [];
+            return alumnos.reduce((counts, alumno) => {
+                counts.all += 1;
+                if (!hasFinalGrade(alumno)) counts.missing += 1;
+                if (hasFinalGrade(alumno) && alumno.final < 5) counts.fail += 1;
+                if (hasRaRisk(alumno)) counts.risk += 1;
+                if (hasFinalGrade(alumno) && alumno.final >= 5) counts.pass += 1;
+                return counts;
+            }, { all: 0, missing: 0, fail: 0, risk: 0, pass: 0 });
+        }
+
+        function renderStudentQuickFilters(counts = getStudentFilterCounts()) {
+            if (!studentQuickFilters) return;
+            studentQuickFilters.querySelectorAll("[data-student-filter]").forEach((button) => {
+                const key = button.dataset.studentFilter || "all";
+                const label = button.dataset.label || key;
+                button.classList.toggle("active", key === activeStudentFilter);
+                button.innerHTML = `${escapeHtml(label)} <span class="quick-count">${counts[key] || 0}</span>`;
+            });
+        }
+
+        function renderTeacherAlerts() {
+            if (!teacherAlerts || !state) return;
+            const counts = getStudentFilterCounts();
+            const weakCe = getGlobalWeakCe();
+            const cards = [];
+
+            if (counts.missing > 0) {
+                cards.push(`
+                    <article class="teacher-alert warning">
+                        <strong>${counts.missing} alumno(s) sin nota final</strong>
+                        <p>Revisa alumnado sin consolidar en esta evaluacion.</p>
+                        <div class="teacher-alert-actions">
+                            <button type="button" data-student-filter-action="missing">Ver sin final</button>
+                        </div>
+                    </article>`);
+            }
+
+            if (counts.fail > 0) {
+                cards.push(`
+                    <article class="teacher-alert danger">
+                        <strong>${counts.fail} suspenso(s) finales</strong>
+                        <p>Acceso rapido a alumnado por debajo de 5.</p>
+                        <div class="teacher-alert-actions">
+                            <button type="button" data-student-filter-action="fail">Ver suspensos</button>
+                        </div>
+                    </article>`);
+            }
+
+            if (counts.risk > 0) {
+                cards.push(`
+                    <article class="teacher-alert warning">
+                        <strong>${counts.risk} con RA en riesgo</strong>
+                        <p>Hay algun RA activo por debajo de 5.</p>
+                        <div class="teacher-alert-actions">
+                            <button type="button" data-student-filter-action="risk">Ver riesgo RA</button>
+                        </div>
+                    </article>`);
+            }
+
+            if (weakCe) {
+                cards.push(`
+                    <article class="teacher-alert ${weakCe.average < 5 ? "warning" : "info"}">
+                        <strong>CE mas bajo: ${escapeHtml(weakCe.code)}</strong>
+                        <p>${escapeHtml(weakCe.raLabel)} - media ${formatGrade(weakCe.average)} (${weakCe.count} nota(s)).</p>
+                        <div class="teacher-alert-actions">
+                            <button type="button" data-open-summary="true">Ver resumen CE</button>
+                        </div>
+                    </article>`);
+            }
+
+            if (!cards.length) {
+                cards.push(`
+                    <article class="teacher-alert success">
+                        <strong>Evaluacion sin alertas</strong>
+                        <p>No hay finales pendientes, suspensos ni RA en riesgo.</p>
+                    </article>`);
+            }
+
+            teacherAlerts.innerHTML = cards.join("");
+            teacherAlerts.querySelectorAll("[data-student-filter-action]").forEach((button) => {
+                button.addEventListener("click", () => focusStudentFilter(button.dataset.studentFilterAction || "all"));
+            });
+            teacherAlerts.querySelectorAll("[data-open-summary]").forEach((button) => {
+                button.addEventListener("click", () => switchTab("resumen"));
+            });
+        }
+
+        function focusStudentFilter(filter) {
+            activeStudentFilter = filter;
+            renderStudentQuickFilters(getStudentFilterCounts());
+            renderTable();
+            const alumno = (state.alumnos || []).find(matchesStudentFilter);
+            if (alumno) {
+                selectStudent(alumno.rowIdx, { scroll: true });
+            }
+        }
+
+        function getGlobalWeakCe() {
+            const groups = new Map();
+            (state.alumnos || []).forEach((alumno) => {
+                (alumno.criterios || []).forEach((criterio) => {
+                    if (typeof criterio.nota !== "number" || criterio.nota <= 0) return;
+                    const code = criterio.codigo || "CE";
+                    const raLabel = criterio.raLabel || `RA ${criterio.raNumero || ""}`.trim();
+                    const key = `${criterio.raColIdx || raLabel}:${code}`;
+                    const item = groups.get(key) || { code, raLabel, total: 0, count: 0 };
+                    item.total += criterio.nota;
+                    item.count += 1;
+                    groups.set(key, item);
+                });
+            });
+
+            return Array.from(groups.values())
+                .map((item) => ({ ...item, average: item.total / item.count }))
+                .sort((a, b) => a.average - b.average)[0] || null;
+        }
+
+        function renderTable() {
+            if (!state) return;
+
+            const activeColIdxs = getActiveRaColIdxs();
+            const raColumns = (state.raColumns || []).filter((ra) => activeColIdxs.has(ra.colIdx));
+
+            notesHead.innerHTML = `
+                <tr>
+                    <th class="status-col" title="Estado">●</th>
+                    <th class="student-col">Alumno</th>
+                    ${raColumns.map((ra) => `<th>${escapeHtml(ra.label)}</th>`).join("")}
+                    <th>Final</th>
+                    <th class="report-col">Informe</th>
+                </tr>
+            `;
+
+            const query = normalize(searchInput.value);
+            const alumnos = (state.alumnos || []).filter((item) =>
+                (!query || normalize(item.nombre).includes(query)) && matchesStudentFilter(item)
+            );
+
+            if (!alumnos.length) {
+                notesBody.innerHTML = `<tr><td colspan="${raColumns.length + 4}">No hay alumnos para mostrar.</td></tr>`;
+                return;
+            }
+
+            notesBody.innerHTML = alumnos.map((alumno) => {
+                const status = studentStatus(alumno);
+                const reportUrl = `informes.html?alumno=${encodeURIComponent(alumno.nombre || "")}`;
+                return `
+                <tr class="${alumno.rowIdx === selectedRowIdx ? "selected" : ""}" data-row="${alumno.rowIdx}">
+                    <td class="status-col"><span class="status-dot ${status}" title="${statusTitle(status)}"></span></td>
+                    <td class="student-col">${escapeHtml(alumno.nombre)}</td>
+                    ${(alumno.rraa || []).filter((ra) => activeColIdxs.has(ra.colIdx)).map((ra) => `<td>${raGradeButton(alumno, ra)}</td>`).join("")}
+                    <td>${gradeBadge(alumno.final, alumno.finalDisplay)}</td>
+                    <td class="report-col"><a class="mini-action report-link" href="${escapeHtml(reportUrl)}">Informe</a></td>
+                </tr>`;
+            }).join("");
+
+            notesBody.querySelectorAll("tr[data-row]").forEach((row) => {
+                row.addEventListener("click", () => {
+                    selectStudent(Number(row.dataset.row), { scroll: true });
+                });
+            });
+
+            notesBody.querySelectorAll(".report-link").forEach((link) => {
+                link.addEventListener("click", (event) => event.stopPropagation());
+            });
+
+            notesBody.querySelectorAll(".grade-button[data-row][data-ra]").forEach((button) => {
+                button.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    selectStudentRa(Number(button.dataset.row), Number(button.dataset.ra), { scroll: true });
+                });
+            });
+        }
+
+        function selectStudent(rowIdx, options = {}) {
+            selectedRowIdx = rowIdx;
+            if (options.clearSearch) searchInput.value = "";
+            renderStudentSelect();
+            renderTable();
+            renderDetail();
+            if (options.scroll) {
+                if (activeTab !== "tabla") switchTab("tabla");
+                document.getElementById("detailSection").scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+
+        function selectStudentRa(rowIdx, raColIdx, options = {}) {
+            selectedRowIdx = rowIdx;
+            selectedRaColIdx = raColIdx;
+            if (options.clearSearch) searchInput.value = "";
+            renderStudentSelect();
+            renderTable();
+            renderDetail();
+            if (options.scroll) {
+                if (activeTab !== "tabla") switchTab("tabla");
+                document.getElementById("detailSection").scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+
+        function raGradeButton(alumno, ra) {
+            const label = shortRaLabel(ra.label || `RA ${ra.numero || ""}`);
+            return `<button type="button" class="grade-button" data-row="${alumno.rowIdx}" data-ra="${ra.colIdx}" title="Ver CE de ${escapeHtml(label)} para ${escapeHtml(alumno.nombre)}" aria-label="Ver CE de ${escapeHtml(label)} para ${escapeHtml(alumno.nombre)}">${gradeBadge(ra.nota, ra.display)}</button>`;
+        }
+
+        function renderRaBadges(alumno) {
+            const activeColIdxs = getActiveRaColIdxs();
+            const raColumns = (state.raColumns || []).filter((ra) => activeColIdxs.has(ra.colIdx));
+            const badgeRow = document.getElementById("raBadgeRow");
+            if (!raColumns.length) { badgeRow.style.display = "none"; return; }
+
+            badgeRow.style.display = "flex";
+            badgeRow.innerHTML = raColumns.map((ra) => {
+                const r = (alumno.rraa || []).find((r) => Number(r.colIdx) === Number(ra.colIdx));
+                const nota = r && typeof r.nota === "number" && r.nota > 0 ? r.nota : null;
+                const cls = nota === null ? "empty" : nota >= 5 ? "ok" : nota >= 3 ? "warn" : "bad";
+                const label = shortRaLabel(ra.label);
+                const isActive = Number(ra.colIdx) === Number(selectedRaColIdx);
+                const active = isActive ? " active" : "";
+                return `<button type="button" class="ra-badge-item ${cls}${active}" data-row="${alumno.rowIdx}" data-ra="${ra.colIdx}" title="Ver CE de ${escapeHtml(label)}" aria-pressed="${isActive ? "true" : "false"}">
+                    <span class="ra-badge-lbl">${escapeHtml(label)}</span>
+                    <span class="ra-badge-nota">${formatDisplayGrade(r ? r.display : null)}</span>
+                </button>`;
+            }).join("");
+
+            badgeRow.querySelectorAll(".ra-badge-item[data-row][data-ra]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    selectStudentRa(Number(button.dataset.row), Number(button.dataset.ra));
+                });
+            });
+        }
+
+        function renderDetail() {
+            if (!state) return;
+
+            const alumno = (state.alumnos || []).find((item) => item.rowIdx === selectedRowIdx);
+            if (!alumno) {
+                detailName.textContent = "Selecciona un alumno";
+                detailFinal.textContent = "Nota final: -";
+                raDetailSelect.innerHTML = "";
+                criteriaGrid.innerHTML = "";
+                document.getElementById("raBadgeRow").style.display = "none";
+                studentReportLink.style.display = "none";
+                return;
+            }
+
+            detailName.textContent = alumno.nombre;
+            detailFinal.textContent = `Nota final: ${formatDisplayGrade(alumno.finalDisplay)}`;
+            studentReportLink.href = `informes.html?alumno=${encodeURIComponent(alumno.nombre || "")}`;
+            studentReportLink.style.display = "";
+            renderRaBadges(alumno);
+            renderRaSelector(alumno);
+
+            const criterios = (alumno.criterios || []).filter((criterio) =>
+                Number(criterio.raColIdx) === Number(selectedRaColIdx) &&
+                typeof criterio.nota === "number"
+            );
+
+            if (!criterios.length) {
+                criteriaGrid.innerHTML = '<div class="criterion-card"><span>Sin criterios</span>-</div>';
+                return;
+            }
+
+            criteriaGrid.innerHTML = criterios.map((criterio) => `
+                <div class="criterion-card">
+                    <span>${escapeHtml(criterio.codigo)}</span>
+                    ${gradeBadge(criterio.nota, criterio.display)}
+                </div>
+            `).join("");
+        }
+
+        function renderRaSelector(alumno) {
+            const activeColIdxs = getActiveRaColIdxs();
+            const raColumns = (state.raColumns || []).filter((ra) => activeColIdxs.has(ra.colIdx));
+
+            if (!raColumns.some((ra) => Number(ra.colIdx) === Number(selectedRaColIdx))) {
+                selectedRaColIdx = raColumns[0] ? raColumns[0].colIdx : null;
+            }
+
+            raDetailSelect.innerHTML = raColumns.map((ra) => {
+                const summary = (alumno.rraa || []).find((item) => Number(item.colIdx) === Number(ra.colIdx));
+                const label = summary && summary.display ? `${ra.label} - ${formatDisplayGrade(summary.display)}` : ra.label;
+                return `<option value="${ra.colIdx}" ${Number(ra.colIdx) === Number(selectedRaColIdx) ? "selected" : ""}>${escapeHtml(label)}</option>`;
+            }).join("");
+        }
+
+        // ── Tabs ─────────────────────────────────────────────────────────────
+
+        let activeTab = "tabla";
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.getElementById("viewTabla").style.display = tab === "tabla" ? "" : "none";
+            document.getElementById("viewResumen").style.display = tab === "resumen" ? "" : "none";
+            document.getElementById("viewHeatmap").style.display = tab === "heatmap" ? "" : "none";
+            document.getElementById("detailSection").style.display = tab === "tabla" ? "" : "none";
+            ["tabTabla", "tabResumen", "tabHeatmap"].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle("active", id === "tab" + tab.charAt(0).toUpperCase() + tab.slice(1));
+            });
+            if (tab === "resumen") renderSummary();
+            if (tab === "heatmap") renderHeatmap();
+        }
+
+        // ── Mapa de calor ────────────────────────────────────────────────────
+
+        function renderHeatmap() {
+            const el = document.getElementById("heatmapContent");
+            if (!state) { el.innerHTML = '<p class="summary-empty">Sin datos.</p>'; return; }
+
+            const alumnos = state.alumnos || [];
+            const activeColIdxs = getActiveRaColIdxs();
+            const raColumns = (state.raColumns || []).filter((ra) => activeColIdxs.has(ra.colIdx));
+
+            if (!alumnos.length || !raColumns.length) {
+                el.innerHTML = '<p class="summary-empty">No hay datos para esta evaluación.</p>';
+                return;
+            }
+
+            const shortLabel = (lbl) => lbl.replace(/NOTA\s*/i, "").trim();
+
+            const headers = raColumns.map((ra) =>
+                `<th title="${escapeHtml(ra.label)}">${escapeHtml(shortLabel(ra.label))}</th>`
+            ).join("");
+
+            const rows = alumnos.map((alumno) => {
+                const status = studentStatus(alumno);
+                const raCells = raColumns.map((ra) => {
+                    const r = (alumno.rraa || []).find((r) => Number(r.colIdx) === Number(ra.colIdx));
+                    const nota = r && typeof r.nota === "number" && r.nota > 0 ? r.nota : null;
+                    const lbl = formatDisplayGrade(r ? r.display : null);
+                    const cls = nota === null ? "hm-empty" : nota >= 5 ? "hm-ok" : nota >= 3 ? "hm-warn" : "hm-bad";
+                    return `<td class="${cls}">${lbl !== "-" ? lbl : ""}</td>`;
+                }).join("");
+
+                const fCls = typeof alumno.final === "number"
+                    ? (alumno.final >= 5 ? "hm-ok" : "hm-bad") : "hm-empty";
+
+                return `<tr data-row="${alumno.rowIdx}" style="cursor:pointer">
+                    <td class="hm-name">
+                        <span class="status-dot ${status}" title="${statusTitle(status)}"></span>
+                        ${escapeHtml(alumno.nombre)}
+                    </td>
+                    ${raCells}
+                    <td class="${fCls} hm-final">${formatDisplayGrade(alumno.finalDisplay)}</td>
+                </tr>`;
+            }).join("");
+
+            el.innerHTML = `<table class="heatmap-table ux-table">
+                <thead><tr>
+                    <th class="hm-th-name">Alumno</th>
+                    ${headers}
+                    <th>Final</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+
+            el.querySelectorAll("tr[data-row]").forEach((row) => {
+                row.addEventListener("click", () => {
+                    selectedRowIdx = Number(row.dataset.row);
+                    switchTab("tabla");
+                    renderTable();
+                    renderDetail();
+                    document.getElementById("detailSection").scrollIntoView({ behavior: "smooth", block: "nearest" });
+                });
+            });
+        }
+
+        // ── Resumen visual ───────────────────────────────────────────────────
+
+        function renderSummary() {
+            const el = document.getElementById("summaryContent");
+            if (!state) { el.innerHTML = '<p class="summary-empty">Sin datos.</p>'; return; }
+
+            const alumnos = state.alumnos || [];
+            const activeColIdxs = getActiveRaColIdxs();
+            const raColumns = (state.raColumns || []).filter((ra) => activeColIdxs.has(ra.colIdx));
+
+            if (!raColumns.length) {
+                el.innerHTML = '<p class="summary-empty">No hay RA con notas para esta evaluación.</p>';
+                return;
+            }
+
+            el.innerHTML = raColumns.map((ra) => {
+                const raGrades = alumnos.map((a) => {
+                    const r = (a.rraa || []).find((r) => Number(r.colIdx) === Number(ra.colIdx));
+                    return r && typeof r.nota === "number" && r.nota > 0 ? r.nota : null;
+                }).filter((v) => v !== null);
+
+                const avg = raGrades.length ? raGrades.reduce((s, v) => s + v, 0) / raGrades.length : null;
+                const passed = raGrades.filter((v) => v >= 5).length;
+                const barPct = avg !== null ? Math.min(100, Math.round((avg / 10) * 100)) : 0;
+                const barClass = avg === null ? "bar-none" : avg >= 5 ? "bar-ok" : avg >= 3 ? "bar-warn" : "bar-bad";
+                const badgeClass = avg === null ? "empty" : avg >= 5 ? "ok" : "bad";
+                const avgText = avg !== null ? avg.toFixed(2).replace(".", ",") : "-";
+
+                const ceCodes = [];
+                const seen = new Set();
+                alumnos.forEach((a) => {
+                    (a.criterios || [])
+                        .filter((c) => Number(c.raColIdx) === Number(ra.colIdx) && typeof c.nota === "number")
+                        .forEach((c) => { if (!seen.has(c.codigo)) { seen.add(c.codigo); ceCodes.push(c.codigo); } });
+                });
+
+                const ceSummaries = ceCodes.map((code) => {
+                    const ceGrades = alumnos.map((a) => {
+                        const c = (a.criterios || []).find(
+                            (c) => c.codigo === code && Number(c.raColIdx) === Number(ra.colIdx)
+                        );
+                        return c && typeof c.nota === "number" && c.nota > 0 ? c.nota : null;
+                    }).filter((v) => v !== null);
+                    const ceAvg = ceGrades.length ? ceGrades.reduce((s, v) => s + v, 0) / ceGrades.length : null;
+                    const cePassed = ceGrades.filter((v) => v >= 5).length;
+                    return { code, ceGrades, ceAvg, cePassed };
+                });
+                const weakCe = ceSummaries
+                    .filter((item) => item.ceAvg !== null)
+                    .sort((a, b) => a.ceAvg - b.ceAvg)[0] || null;
+                const ceHtml = ceSummaries.map(({ code, ceGrades, ceAvg, cePassed }) => {
+                    const ceCls = ceAvg === null ? "empty" : ceAvg >= 5 ? "ok" : "bad";
+                    return `
+                        <div class="ce-item">
+                            <div class="ce-code">${escapeHtml(code)}</div>
+                            <span class="grade ${ceCls} ux-grade">${ceAvg !== null ? ceAvg.toFixed(2).replace(".", ",") : "-"}</span>
+                            <div class="ce-sub">${cePassed}/${ceGrades.length} aprobados</div>
+                        </div>`;
+                }).join("");
+
+                return `
+                    <div class="ra-block">
+                        <div class="ra-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'grid' : 'none'; this.querySelector('.ra-toggle').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
+                            <span class="ra-label">${escapeHtml(ra.label)}</span>
+                            <div class="ra-stats">
+                                <div class="ra-bar-wrap"><div class="ra-bar ${barClass}" style="width:${barPct}%"></div></div>
+                                <span class="grade ${badgeClass} ux-grade">${avgText}</span>
+                                <span>${passed}/${raGrades.length} apr.</span>
+                                ${weakCe ? `<span class="ra-risk-note">CE bajo: ${escapeHtml(weakCe.code)} ${weakCe.ceAvg.toFixed(2).replace(".", ",")}</span>` : ""}
+                            </div>
+                            <span class="ra-toggle">${ceHtml ? "▼" : ""}</span>
+                        </div>
+                        ${ceHtml ? `<div class="ce-grid">${ceHtml}</div>` : ""}
+                    </div>`;
+            }).join("");
+        }
+
+        function gradeBadge(value, display) {
+            const label = formatDisplayGrade(display);
+            let cls = "empty";
+
+            if (typeof value === "number") {
+                if (value >= 5) {
+                    cls = "ok";
+                } else if (value > 0) {
+                    cls = "bad";
+                } else {
+                    cls = "empty";
+                }
+            }
+
+            return `<span class="grade ${cls} ux-grade">${escapeHtml(label)}</span>`;
+        }
+
+        function formatGrade(value) {
+            return Number(value).toFixed(2).replace(".", ",");
+        }
+
+        function formatDisplayGrade(display) {
+            if (!display && display !== 0) return "-";
+            const n = parseFloat(String(display).replace(",", "."));
+            if (isNaN(n)) return display || "-";
+            return n.toFixed(2).replace(".", ",");
+        }
+
+        function shortRaLabel(label) {
+            return String(label || "").replace(/NOTA\s*/i, "").trim() || "RA";
+        }
+
+        function normalize(value) {
+            return String(value || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .trim();
+        }
+
+        function showMessage(text, type) {
+            messageBox.textContent = text;
+            messageBox.className = `message ${type} show`;
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
