@@ -285,6 +285,33 @@ Notas:
 - Las pantallas de empresa y nota final siguen orientadas a escritorio (dependen del backend Tauri).
 - En modo web no se mantiene un archivo activo compartido entre pantallas; cada gestor carga su Excel localmente.
 
+## Estado actual web (2026-07-25)
+
+Resumen operativo de la fase GitHub Pages + OneDrive:
+
+- GitHub Pages activo en: `https://sebantonio.github.io/FP_Notas_Web/`
+- Deploy automatico por push a `main` mediante `.github/workflows/deploy-pages.yml`
+- El workflow publica un artefacto generado desde archivos fuente actuales (carpeta temporal `_site`)
+- No depende de sincronizar manualmente `web-deploy/` para reflejar cambios nuevos
+
+Funcionalidad añadida en portada (`index.html`):
+
+- `Config. OneDrive`: guardar URL base de OneDrive en `localStorage`
+- `Explorar OneDrive`: abrir la URL configurada en nueva pestana
+- `Guardar archivo OD`: guardar en Recientes una URL de archivo de OneDrive + nombre legible
+- Recientes en modo web: si el item es una URL `http/https`, se abre directamente en nueva pestana
+
+Limitaciones conocidas (navegador):
+
+- No es posible seleccionar de forma programatica un archivo remoto de OneDrive y montarlo como `File` local sin interaccion del usuario
+- El flujo web recomendado sigue siendo: abrir OneDrive -> copiar enlace del archivo -> guardar en Recientes -> abrir enlace / cargar archivo en gestor
+
+## Documento de continuidad
+
+Para continuar desarrollo/soporte de esta fase, revisar:
+
+- `CONTINUIDAD_WEB_GITHUB_PAGES_2026-07-25.md`
+
 ## Autor
 
 Sebantonio
