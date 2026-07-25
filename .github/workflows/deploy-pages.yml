@@ -25,6 +25,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build web artifact
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          files=(
+            _routes.json
+            index.html
+            gestor-alumnos.html
+            gestor-unidades.html
+            gestor-rraa-criterios.html
+            gestor-notas.html
+            incluir-actividad.html
+            diario.html
+            visor-notas.html
+            visor-actividades.html
+            visor-unidades.html
+            informes.html
+            gestor-empresa.html
+            visor-empresa.html
+            visor-nota-final.html
+            app-bridge.js
+            ux-common.css
+            ux-common.js
+          )
+
+          for file in "${files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "Missing required file: $file" >&2
+              exit 1
+            fi
+            cp "$file" _site/
+          done
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
@@ -33,7 +67,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web-deploy
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
