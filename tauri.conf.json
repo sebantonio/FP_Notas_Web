@@ -5,9 +5,7 @@
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
-    "devPath": "../",
-    "frontendDist": "../",
-    "withGlobalTauri": false
+    "frontendDist": ".."
   },
   "app": {
     "windows": [
@@ -19,30 +17,18 @@
         "maximized": true
       }
     ],
+    "android": [
+      {
+        "minSdkVersion": 24,
+        "targetSdkVersion": 34
+      }
+    ],
     "security": {
       "csp": null
     }
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "msi",
-      "nsis"
-    ],
-    "deb": {
-      "depends": []
-    },
-    "nsis": {
-      "headerBitmap": "",
-      "installerIcon": "",
-      "uninstallerIcon": "",
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    }
-  },
-  "android": {
-    "minSdkVersion": 24,
-    "targetSdkVersion": 34
+    "targets": ["msi"]
   }
 }
