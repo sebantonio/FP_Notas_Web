@@ -392,7 +392,6 @@
             border: 1px solid transparent;
             cursor: pointer;
             transition: background 0.15s ease, border-color 0.15s ease;
-            group: 'recent-item';
         }
 
         .recent-item:hover {
@@ -953,6 +952,7 @@
 
                 <div class="file-actions">
                     <button class="small-button" type="button" id="changeFileBtn">Cambiar archivo</button>
+                    <button class="small-button" type="button" id="oneDriveExploreBtn" title="Abrir OneDrive en otra pestaña">Explorar OneDrive</button>
                     <a
                         id="oneDriveLink"
                         class="online-link"
@@ -960,6 +960,7 @@
                         target="_blank"
                         rel="noopener noreferrer"
                     >OneDrive ↗</a>
+                    <button class="small-button" type="button" id="oneDriveSaveFileBtn" title="Guardar archivo de OneDrive en recientes">Guardar archivo OD</button>
                     <button class="small-button" type="button" id="oneDriveConfigBtn" title="Configurar enlace de OneDrive">Config. OneDrive</button>
                 </div>
 
@@ -1116,6 +1117,22 @@
             return normalizarOneDriveUrl(saved) || DEFAULT_ONEDRIVE_URL;
         }
 
+        function isWebUrl(value) {
+            return /^https?:\/\//i.test(String(value || "").trim());
+        }
+
+        function inferFileNameFromUrl(fileUrl) {
+            try {
+                const parsed = new URL(fileUrl);
+                const parts = parsed.pathname.split("/").filter(Boolean);
+                const lastPart = decodeURIComponent(parts[parts.length - 1] || "").trim();
+                if (lastPart && /\.xlsx?$|\.xlsm$/i.test(lastPart)) {
+                    return lastPart;
+                }
+            } catch {}
+            return "Archivo OneDrive";
+        }
+
         function applyOneDriveUrl() {
             const link = document.getElementById("oneDriveLink");
             if (!link) return;
@@ -1137,6 +1154,36 @@
             applyOneDriveUrl();
             if (window.appUx && typeof window.appUx.showStatus === "function") {
                 window.appUx.showStatus("Enlace de OneDrive actualizado", "success", 3000);
+            }
+        }
+
+        function abrirOneDriveEnNavegador() {
+            const url = getOneDriveUrl();
+            window.open(url, "_blank", "noopener,noreferrer");
+        }
+
+        async function guardarArchivoOneDriveEnRecientes() {
+            const baseUrl = getOneDriveUrl();
+            const fileUrlRaw = prompt("Pega la URL del archivo de OneDrive que quieres guardar en Recientes:", baseUrl);
+            if (fileUrlRaw === null) return;
+
+            const fileUrl = normalizarOneDriveUrl(fileUrlRaw);
+            if (!fileUrl) {
+                alert("URL no válida. Debe empezar por http:// o https://");
+                return;
+            }
+
+            const suggestedName = inferFileNameFromUrl(fileUrl);
+            const customName = prompt("Nombre para mostrar en Recientes:", suggestedName);
+            if (customName === null) return;
+
+            const finalName = String(customName || "").trim() || suggestedName;
+            saveRecentFile(fileUrl, finalName);
+            setFileActive(finalName, fileUrl);
+            await renderRecentFiles(fileUrl);
+
+            if (window.appUx && typeof window.appUx.showStatus === "function") {
+                window.appUx.showStatus("Archivo de OneDrive guardado en Recientes", "success", 3500);
             }
         }
 
@@ -1249,6 +1296,14 @@
         }
 
         async function activateFile(filePath) {
+            if (isWebUrl(filePath)) {
+                const recent = getRecentFiles().find((f) => f.path === filePath);
+                const label = recent?.name || inferFileNameFromUrl(filePath);
+                setFileActive(label, filePath);
+                window.open(filePath, "_blank", "noopener,noreferrer");
+                return;
+            }
+
             if (!window.electronExcel) return;
             try {
                 const result = await window.electronExcel.setSelectedFile(filePath);
@@ -1405,12 +1460,18 @@
             if (oneDriveConfigBtn) {
                 oneDriveConfigBtn.addEventListener("click", configurarOneDriveUrl);
             }
+            const oneDriveExploreBtn = document.getElementById("oneDriveExploreBtn");
+            if (oneDriveExploreBtn) {
+                oneDriveExploreBtn.addEventListener("click", abrirOneDriveEnNavegador);
+            }
+            const oneDriveSaveFileBtn = document.getElementById("oneDriveSaveFileBtn");
+            if (oneDriveSaveFileBtn) {
+                oneDriveSaveFileBtn.addEventListener("click", guardarArchivoOneDriveEnRecientes);
+            }
 
             if (!window.electronExcel) {
                 const activeName = document.getElementById("activeFileName");
                 const changeBtn = document.getElementById("changeFileBtn");
-                const recentKicker = document.getElementById("recentKicker");
-                const clearBtn = document.getElementById("clearAllRecentBtn");
                 const alertasPanel = document.getElementById("alertasPanel");
 
                 if (activeName) {
@@ -1418,12 +1479,6 @@
                 }
                 if (changeBtn) {
                     changeBtn.style.display = "none";
-                }
-                if (recentKicker) {
-                    recentKicker.style.display = "none";
-                }
-                if (clearBtn) {
-                    clearBtn.style.display = "none";
                 }
                 if (alertasPanel) {
                     alertasPanel.style.display = "none";
