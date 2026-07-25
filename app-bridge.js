@@ -3,28 +3,16 @@
     return;
   }
 
-  function createUnavailableApi(reason) {
-    return new Proxy({}, {
-      get(_target, prop) {
-        if (prop === "isAvailable") {
-          return false;
-        }
-
-        return function unavailableApiCall() {
-          return Promise.reject(new Error(
-            `API de escritorio no disponible (${reason}). Metodo solicitado: ${String(prop)}`
-          ));
-        };
-      }
-    });
-  }
-
   const tauriCore = window.__TAURI__ && window.__TAURI__.core;
 
   if (!tauriCore || typeof tauriCore.invoke !== "function") {
-    window.electronExcel = createUnavailableApi("Tauri core/invoke no inicializado");
+    // En navegador puro (Android/web) no exponemos API de escritorio.
+    // Esto permite que las pantallas entren en su flujo web (XLSX en cliente).
+    window.__APP_RUNTIME__ = "web";
     return;
   }
+
+  window.__APP_RUNTIME__ = "desktop";
 
   const invoke = tauriCore.invoke;
   const invokeCommand = (command, args = {}) => invoke(command, args).catch((error) => {

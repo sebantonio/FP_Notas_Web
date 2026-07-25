@@ -262,6 +262,29 @@ Revisar carpeta `Documentacion/` para guias detalladas:
 2. Validar instalador generado en entorno real.
 3. Realizar bateria de pruebas sobre operaciones de lectura/escritura Excel.
 
+## Modo web y Android
+
+La aplicacion puede abrirse en navegador (incluido Android) usando las pantallas HTML.
+
+Comportamiento esperado en web:
+
+- Si no existe runtime Tauri, `app-bridge.js` activa modo web automaticamente.
+- En ese modo, los gestores compatibles usan carga local de `.xlsx` en cliente (sin IPC de escritorio).
+- El guardado en web se realiza como descarga de un Excel actualizado.
+
+Flujo recomendado en Android:
+
+1. Abrir `index.html` en el navegador.
+2. Entrar en `Gestor Alumnos`, `Gestor Unidades` o `Gestor RRAA/Criterios`.
+3. Cargar el archivo Excel desde el selector del navegador.
+4. Editar los datos.
+5. Guardar/descargar el `.xlsx` generado.
+
+Notas:
+
+- Las pantallas de empresa y nota final siguen orientadas a escritorio (dependen del backend Tauri).
+- En modo web no se mantiene un archivo activo compartido entre pantallas; cada gestor carga su Excel localmente.
+
 ## Autor
 
 Sebantonio

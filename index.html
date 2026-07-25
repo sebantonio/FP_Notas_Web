@@ -1360,7 +1360,31 @@
             initContinueBanner();
             refreshActiveSince();
 
-            if (!window.electronExcel) return;
+            if (!window.electronExcel) {
+                const activeName = document.getElementById("activeFileName");
+                const changeBtn = document.getElementById("changeFileBtn");
+                const recentKicker = document.getElementById("recentKicker");
+                const clearBtn = document.getElementById("clearAllRecentBtn");
+                const alertasPanel = document.getElementById("alertasPanel");
+
+                if (activeName) {
+                    activeName.textContent = "Modo web/Android: abre un gestor y carga tu archivo Excel (.xlsx)";
+                }
+                if (changeBtn) {
+                    changeBtn.style.display = "none";
+                }
+                if (recentKicker) {
+                    recentKicker.style.display = "none";
+                }
+                if (clearBtn) {
+                    clearBtn.style.display = "none";
+                }
+                if (alertasPanel) {
+                    alertasPanel.style.display = "none";
+                }
+                renderRecentFiles(null);
+                return;
+            }
 
             document.getElementById("changeFileBtn").addEventListener("click", async () => {
                 try {
